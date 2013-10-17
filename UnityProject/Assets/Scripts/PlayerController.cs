@@ -24,8 +24,8 @@ public class PlayerController : MonoBehaviour {
 		if( other.gameObject.tag == "NextTileTriggers")
 		{
 			// stop motion
-			rigidbody.velocity = Vector3.zero;
-			rigidbody.angularVelocity = Vector3.zero;
+			//rigidbody.velocity = Vector3.zero;
+			//rigidbody.angularVelocity = Vector3.zero;
 			
 			//teleport to new position
 			Direction dir=Direction.None;
