@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Globalization;
+using UnityEditor;
+using UnityEngine;
+using System.Linq;
 using System.Collections;
 
 //public enum for use in ActiveTile and WorldGeneration as well
@@ -12,7 +16,7 @@ public class PlayerController : MonoBehaviour {
 	// Update is called once per frame before the physics are computed
 	void FixedUpdate () 
 	{
-		float moveHorizontal = Input.GetAxis("Horizontal");
+        float moveHorizontal = Input.GetAxis("Horizontal");
 		float moveVertical = Input.GetAxis("Vertical");
 		
 		Vector3 movement = new Vector3(moveHorizontal,0.0f,moveVertical);
@@ -54,4 +58,9 @@ public class PlayerController : MonoBehaviour {
 			actTile.showNextTile(dir);			
 		}
 	}
+    void OnGUI()
+    {
+        speed = GUI.HorizontalSlider(new Rect(25, 35, 300, 30), speed, 0f, 2000.0f);
+        GUI.Label(new Rect(25,15,60,20), speed.ToString(CultureInfo.InvariantCulture));
+    }
 }
