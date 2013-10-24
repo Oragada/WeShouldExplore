@@ -13,9 +13,17 @@ public class PlayerController : MonoBehaviour {
 	//publics
 	public float speed;
 	public ActiveTile actTile;
+	
+	// gui elements
+	public TutorialGui gui;
+	// gui bools
+	private bool tutMoveDone=false;
+	private bool tutSitDone=false;
+	private bool tutInteractDone=false;
+	
 	//privates
 	private bool isSitting=false;
-	private bool isInteracting=false;
+	private bool isInteracting=false;	
 	private int movementMode = 0;
 	
 	//get the collider component once, because the GetComponent-call is expansive
@@ -40,9 +48,12 @@ public class PlayerController : MonoBehaviour {
 		{
 			if(!isSitting) 
 			{
-				//stop the motion
-				//rigidbody.velocity = Vector3.zero;
-				//rigidbody.angularVelocity = Vector3.zero;		
+				// hide how to sit in the gui
+				if(!tutSitDone)
+				{
+					gui.fadeOutGuiElement(Tutorials.sit);
+					tutSitDone=true;
+				}		
 				//sit down
 				gameObject.transform.localScale = new Vector3(1.0f,0.5f,1.0f);				
 				gameObject.transform.Translate(new Vector3(0.0f,-0.25f,0.0f));
@@ -57,6 +68,16 @@ public class PlayerController : MonoBehaviour {
 			}
 		}	
 		
+		if( interact )
+		{
+			if(!tutInteractDone)
+			{
+				gui.fadeOutGuiElement(Tutorials.interact);
+				tutInteractDone=true;
+			}
+		}
+		
+				
         if( Input.GetButtonDown("ToggleMovementMode"))
 		{	movementMode++;
 			if( movementMode > 2)
@@ -65,16 +86,36 @@ public class PlayerController : MonoBehaviour {
 		
 		if ( !isSitting)
 		{
+			
 			if( movementMode == 0) // DPAD mode
 			{
+				bool moved=false;
+				
 				if( v > 0.05f )
+				{
 					gameObject.transform.Translate(new Vector3(0.1f,0.0f,0.0f)*Time.deltaTime*speed);
-				if( v < -0.05f )
+					moved = true;
+				}
+				else if( v < -0.05f )
+				{
 					gameObject.transform.Translate(new Vector3(-0.1f,0.0f,0.0f)*Time.deltaTime*speed);
+					moved = true;
+				}
 				if( h < -0.05f )
+				{
 					gameObject.transform.Translate(new Vector3(0.0f,0.0f,0.1f)*Time.deltaTime*speed);
+					moved = true;
+				}
 				if( h > 0.05f )
+				{
 					gameObject.transform.Translate(new Vector3(0.0f,0.0f,-0.1f)*Time.deltaTime*speed);
+					moved = true;
+				}
+				if(!tutMoveDone && moved)
+				{
+					gui.fadeOutGuiElement(Tutorials.move);
+					tutMoveDone=true;
+				}
 			}
 			else if( movementMode == 1) // diagonal mode version one
 			{
@@ -172,17 +213,15 @@ public class PlayerController : MonoBehaviour {
 	}
     void OnGUI()
     {
-        speed = GUI.HorizontalSlider(new Rect(25, 35, 300, 10), speed, 0f, 500.0f);
-        GUI.Label(new Rect(25,15,60,20), speed.ToString(CultureInfo.InvariantCulture));
-		float test = GUI.HorizontalSlider(new Rect(25, 65, 50, 10), movementMode, 0.0f, 2.0f);
-		GUI.Label(new Rect(25,45,150,20), "AlternateMoveStyle:");
+        speed = GUI.HorizontalSlider(new Rect(25, 435, 300, 10), speed, 0f, 500.0f);
+        GUI.Label(new Rect(25,415,60,20), speed.ToString(CultureInfo.InvariantCulture));
+		float test = GUI.HorizontalSlider(new Rect(25, 465, 50, 10), movementMode, 0.0f, 2.0f);
+		GUI.Label(new Rect(25,445,150,20), "AlternateMoveStyle:");
 		if( test > 1.5f) 
 			movementMode = 2;
 		else if( test > 0.5f)
 			movementMode = 1;
 		else
-			movementMode = 0;
-			
-      //  GUI.Label(new Rect(25,15,60,20), movementMode.ToString(CultureInfo.InvariantCulture));
+			movementMode = 0;			
     }
 }
