@@ -24,7 +24,7 @@ public class PlayerController : MonoBehaviour {
 	//privates
 	private bool isSitting=false;
 	private bool isInteracting=false;	
-	private int movementMode = 0;
+	private int movementMode = 1;
 	
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
@@ -69,7 +69,9 @@ public class PlayerController : MonoBehaviour {
 		}	
 		
 		if( interact )
-		{
+        {
+            actTile.Interact(gameObject.transform.position, this);
+
 			if(!tutInteractDone)
 			{
 				gui.fadeOutGuiElement(Tutorials.interact);
