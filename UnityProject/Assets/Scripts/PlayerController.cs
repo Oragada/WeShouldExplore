@@ -24,16 +24,12 @@ public class PlayerController : MonoBehaviour {
 	//privates
 	private bool isSitting=false;
 	private bool isInteracting=false;	
-<<<<<<< HEAD
-	private int movementMode = 1;
-=======
 	private int movementMode = 0;
 	// interactive stuff
 	private float progress=0.0f;
 	private bool sit = false;
 	private bool interact = false;
 	private List<Interactive> inRangeElements;
->>>>>>> Implemented the structure for Interactibles
 	
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
