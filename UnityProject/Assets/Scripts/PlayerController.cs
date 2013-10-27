@@ -24,12 +24,21 @@ public class PlayerController : MonoBehaviour {
 	//privates
 	private bool isSitting=false;
 	private bool isInteracting=false;	
+<<<<<<< HEAD
 	private int movementMode = 1;
+=======
+	private int movementMode = 0;
+	// interactive stuff
+	private float progress=0.0f;
+	private bool sit = false;
+	private bool interact = false;
+	private List<Interactive> inRangeElements;
+>>>>>>> Implemented the structure for Interactibles
 	
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
-		//rigidbody.freezeRotation = true;//would push the sphere over the landscape
+		inRangeElements = new List<Interactive>();
 	}	
 	
 	
@@ -41,8 +50,8 @@ public class PlayerController : MonoBehaviour {
 		// changed the Axis gravity&sensitivity to 1000, for more direct input.
 		// for joystick usage however Vince told me to:
 		/* just duplicate Horizontal and use gravity 1, dead 0.2 and sensitivity 1 that it works*/		
-        bool sit = Input.GetButtonDown("Sit");
-		bool interact = Input.GetButtonDown("Interact");
+        sit = Input.GetButtonDown("Sit");
+		interact = Input.GetButtonDown("Interact");
 		
 		if( sit )
 		{
@@ -77,8 +86,19 @@ public class PlayerController : MonoBehaviour {
 				gui.fadeOutGuiElement(Tutorials.interact);
 				tutInteractDone=true;
 			}
+			if( inRangeElements.Count > 0)
+			{
+				inRangeElements[0].activate(progress);
+			}
 		}
-		
+		else
+		{ 
+			// show in the gui what will happen on the "E" button
+			/*if( inRangeElements.Count > 0)
+			{
+				Debug.Log ( inRangeElements[0].getInteractiveText() );
+			}*/
+		}
 				
         if( Input.GetButtonDown("ToggleMovementMode"))
 		{	movementMode++;
@@ -182,10 +202,6 @@ public class PlayerController : MonoBehaviour {
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
 		{
-			// stop motion
-			//rigidbody.velocity = Vector3.zero;
-			//rigidbody.angularVelocity = Vector3.zero;
-			
 			//teleport to new position
 			Direction dir=Direction.None;
 			if( other.name == "WestTrigger")
@@ -212,6 +228,20 @@ public class PlayerController : MonoBehaviour {
 			// update tile, pass the direction along
 			actTile.showNextTile(dir);			
 		}
+		if( other.gameObject.tag == "Interactable")
+		{
+			Interactive addThis = other.GetComponent<Interactive>();
+			inRangeElements.Add(addThis);
+		}
+	}
+	void OnTriggerExit(Collider other)
+	{
+		if( other.gameObject.tag == "Interactable")
+		{
+			Interactive removeThis = other.GetComponent<Interactive>();
+			inRangeElements.Remove(removeThis);
+		}
+		
 	}
     void OnGUI()
     {
