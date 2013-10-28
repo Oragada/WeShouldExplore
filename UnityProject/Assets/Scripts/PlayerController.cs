@@ -241,10 +241,18 @@ public class PlayerController : MonoBehaviour {
 	}
     void OnGUI()
     {
-        speed = GUI.HorizontalSlider(new Rect(25, 435, 300, 10), speed, 0f, 500.0f);
-        GUI.Label(new Rect(25,415,60,20), speed.ToString(CultureInfo.InvariantCulture));
-		float test = GUI.HorizontalSlider(new Rect(25, 465, 50, 10), movementMode, 0.0f, 2.0f);
-		GUI.Label(new Rect(25,445,150,20), "AlternateMoveStyle:");
+		int x=25;
+		int y=415;
+		//progressbar
+        GUI.Label(new Rect(x,y,120,20), "Progress: 0"+ progress.ToString("#.##"));
+		progress = GUI.HorizontalSlider(new Rect(x, y+20, 300, 10), progress, 0.00f, 0.99f);
+		//speed slider
+		GUI.Label(new Rect(x,y+40,60,20), "Speed: "+speed.ToString(CultureInfo.InvariantCulture));
+        speed = GUI.HorizontalSlider(new Rect(x, y+60, 300, 10), speed, 0f, 500.0f);        
+		//movement style slider
+		GUI.Label(new Rect(x,y+80,150,20), "AlternateMoveStyle:");
+		float test = GUI.HorizontalSlider(new Rect(x, y+100, 50, 10), movementMode, 0.0f, 2.0f);
+		
 		if( test > 1.5f) 
 			movementMode = 2;
 		else if( test > 0.5f)
