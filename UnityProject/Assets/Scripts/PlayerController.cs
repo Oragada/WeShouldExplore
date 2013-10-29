@@ -30,6 +30,7 @@ public class PlayerController : MonoBehaviour {
 	private bool sit = false;
 	private bool interact = false;
 	private List<Interactive> inRangeElements;
+	private float THRESH_FOR_NO_COLLISION = 0.1f;
 	
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
@@ -49,6 +50,8 @@ public class PlayerController : MonoBehaviour {
         sit = Input.GetButtonDown("Sit");
 		interact = Input.GetButtonDown("Interact");
 		
+		checkProgress();
+		
 		if( sit )
 		{
 			if(!isSitting) 
@@ -63,6 +66,7 @@ public class PlayerController : MonoBehaviour {
 				gameObject.transform.localScale = new Vector3(1.0f,0.5f,1.0f);				
 				gameObject.transform.Translate(new Vector3(0.0f,-0.25f,0.0f));
 				isSitting = true;
+				playSittingSound();
 			}
 			else
 			{
@@ -103,97 +107,108 @@ public class PlayerController : MonoBehaviour {
 		}
 		
 		if ( !isSitting)
-		{
-			
-			if( movementMode == 0) // DPAD mode
-			{
-				bool moved=false;
-				
-				if( v > 0.05f )
-				{
-					gameObject.transform.Translate(new Vector3(0.1f,0.0f,0.0f)*Time.deltaTime*speed);
-					moved = true;
-				}
-				else if( v < -0.05f )
-				{
-					gameObject.transform.Translate(new Vector3(-0.1f,0.0f,0.0f)*Time.deltaTime*speed);
-					moved = true;
-				}
-				if( h < -0.05f )
-				{
-					gameObject.transform.Translate(new Vector3(0.0f,0.0f,0.1f)*Time.deltaTime*speed);
-					moved = true;
-				}
-				if( h > 0.05f )
-				{
-					gameObject.transform.Translate(new Vector3(0.0f,0.0f,-0.1f)*Time.deltaTime*speed);
-					moved = true;
-				}
-				if(!tutMoveDone && moved)
-				{
-					gui.fadeOutGuiElement(Tutorials.move);
-					tutMoveDone=true;
-				}
-			}
-			else if( movementMode == 1) // diagonal mode version one
-			{
-				Vector3 move = new Vector3(0.0f,0.0f,0.0f);
-				if( v > 0 )
-				{
-					move.x += 0.1f;
-					move.z += 0.1f;
-				}
-				if( v < 0 )
-				{
-					move.x -= 0.1f;
-					move.z -= 0.1f;
-				}
-				if( h < 0 )
-				{
-					move.x -= 0.1f;
-					move.z += 0.1f;
-				}
-				if( h > 0 )
-				{
-					move.x += 0.1f;
-					move.z -= 0.1f;
-				}
-				gameObject.transform.Translate(move*Time.deltaTime*speed);
-			}
-			else if( movementMode == 2) // diagonal mode 
-			{
-				Vector3 move = new Vector3(0.0f,0.0f,0.0f);
-				if( v > 0 )
-				{
-					move.x = Mathf.Min(0.1f, move.x+0.1f);
-					move.z = Mathf.Min(0.1f, move.z+0.1f);
-				}
-				if( v < 0 )
-				{
-					move.x =  Mathf.Max(-0.1f, move.x-0.1f);
-					move.z =  Mathf.Max(-0.1f, move.z-0.1f);					
-				}
-				if( h < 0 )
-				{
-					move.x =  Mathf.Max(-0.1f, move.x-0.1f);
-					move.z = Mathf.Min(0.1f, move.z+0.1f);
-				}
-				if( h > 0 )
-				{
-					move.x = Mathf.Min(0.1f, move.x+0.1f);
-					move.z =  Mathf.Max(-0.1f, move.z-0.1f);					
-				}
-				// when moving diagnoal reduce walk speed by sqrt(2)
-				if( move.x != 0.0f && move.z != 0.0f)
-				{
-					move.x /= Mathf.Sqrt( 2.0f );
-					move.z /= Mathf.Sqrt( 2.0f );
-				}
-				gameObject.transform.Translate(move*Time.deltaTime*speed);
-			}
+		{			
+			movement(v,h);
 		}	
 	}
-	
+	private void checkProgress()
+	{
+		if( progress <= THRESH_FOR_NO_COLLISION)
+		{
+			rigidbody.isKinematic = true;
+		}
+		else 
+			rigidbody.isKinematic = false;
+	}
+	private void movement(float v, float h)
+	{
+		if( movementMode == 0) // DPAD mode
+		{
+			bool moved=false;
+			
+			if( v > 0.05f )
+			{
+				gameObject.transform.Translate(new Vector3(0.1f,0.0f,0.0f)*Time.deltaTime*speed);
+				moved = true;
+			}
+			else if( v < -0.05f )
+			{
+				gameObject.transform.Translate(new Vector3(-0.1f,0.0f,0.0f)*Time.deltaTime*speed);
+				moved = true;
+			}
+			if( h < -0.05f )
+			{
+				gameObject.transform.Translate(new Vector3(0.0f,0.0f,0.1f)*Time.deltaTime*speed);
+				moved = true;
+			}
+			if( h > 0.05f )
+			{
+				gameObject.transform.Translate(new Vector3(0.0f,0.0f,-0.1f)*Time.deltaTime*speed);
+				moved = true;
+			}
+			if(!tutMoveDone && moved)
+			{
+				gui.fadeOutGuiElement(Tutorials.move);
+				tutMoveDone=true;
+			}
+		}
+		else if( movementMode == 1) // diagonal mode version one
+		{
+			Vector3 move = new Vector3(0.0f,0.0f,0.0f);
+			if( v > 0 )
+			{
+				move.x += 0.1f;
+				move.z += 0.1f;
+			}
+			if( v < 0 )
+			{
+				move.x -= 0.1f;
+				move.z -= 0.1f;
+			}
+			if( h < 0 )
+			{
+				move.x -= 0.1f;
+				move.z += 0.1f;
+			}
+			if( h > 0 )
+			{
+				move.x += 0.1f;
+				move.z -= 0.1f;
+			}
+			gameObject.transform.Translate(move*Time.deltaTime*speed);
+		}
+		else if( movementMode == 2) // diagonal mode 
+		{
+			Vector3 move = new Vector3(0.0f,0.0f,0.0f);
+			if( v > 0 )
+			{
+				move.x = Mathf.Min(0.1f, move.x+0.1f);
+				move.z = Mathf.Min(0.1f, move.z+0.1f);
+			}
+			if( v < 0 )
+			{
+				move.x =  Mathf.Max(-0.1f, move.x-0.1f);
+				move.z =  Mathf.Max(-0.1f, move.z-0.1f);					
+			}
+			if( h < 0 )
+			{
+				move.x =  Mathf.Max(-0.1f, move.x-0.1f);
+				move.z = Mathf.Min(0.1f, move.z+0.1f);
+			}
+			if( h > 0 )
+			{
+				move.x = Mathf.Min(0.1f, move.x+0.1f);
+				move.z =  Mathf.Max(-0.1f, move.z-0.1f);					
+			}
+			// when moving diagnoal reduce walk speed by sqrt(2)
+			if( move.x != 0.0f && move.z != 0.0f)
+			{
+				move.x /= Mathf.Sqrt( 2.0f );
+				move.z /= Mathf.Sqrt( 2.0f );
+			}
+			gameObject.transform.Translate(move*Time.deltaTime*speed);
+		}
+	}
 	void OnTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -260,4 +275,15 @@ public class PlayerController : MonoBehaviour {
 		else
 			movementMode = 0;			
     }
+	private void playSittingSound()
+	{
+		foreach ( AudioSource sound in GetComponentsInChildren<AudioSource>())
+		{
+			if ( sound.name == "SittingSound")
+			{
+				if (sound.audio != null && !sound.audio.isPlaying) 
+					sound.audio.Play();				
+			}
+		}		
+	}
 }
