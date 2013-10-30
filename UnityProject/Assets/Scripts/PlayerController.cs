@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour {
 	
 	//publics
 	public float speed;
+	public float inertiaMultiplier=0.1f;
 	public ActiveTile actTile;
 	
 	// gui elements
@@ -31,6 +32,8 @@ public class PlayerController : MonoBehaviour {
 	private bool interact = false;
 	private List<Interactive> inRangeElements;
 	private float THRESH_FOR_NO_COLLISION = 0.1f;
+	private float THRESH_FOR_INERTIA = 0.006f;
+	private Vector3 lastMove= new Vector3(0.0f,0.0f,0.0f);
 	
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
@@ -122,83 +125,76 @@ public class PlayerController : MonoBehaviour {
 	}
 	private void movement(float v, float h)
 	{
+		bool moved=false;
+		Vector3 move = new Vector3(0.0f,0.0f,0.0f);
 		if( movementMode == 0) // DPAD mode
-		{
-			bool moved=false;
-			
+		{			
 			if( v > 0.05f )
 			{
-				gameObject.transform.Translate(new Vector3(0.1f,0.0f,0.0f)*Time.deltaTime*speed);
+				move.x = 0.1f;
 				moved = true;
 			}
 			else if( v < -0.05f )
 			{
-				gameObject.transform.Translate(new Vector3(-0.1f,0.0f,0.0f)*Time.deltaTime*speed);
+				move.x = -0.1f;
 				moved = true;
 			}
 			if( h < -0.05f )
 			{
-				gameObject.transform.Translate(new Vector3(0.0f,0.0f,0.1f)*Time.deltaTime*speed);
+				move.z = 0.1f;
 				moved = true;
 			}
 			if( h > 0.05f )
 			{
-				gameObject.transform.Translate(new Vector3(0.0f,0.0f,-0.1f)*Time.deltaTime*speed);
+				move.z = -0.1f;
 				moved = true;
-			}
-			if(!tutMoveDone && moved)
-			{
-				gui.fadeOutGuiElement(Tutorials.move);
-				tutMoveDone=true;
-			}
+			}			
 		}
 		else if( movementMode == 1) // diagonal mode version one
-		{
-			Vector3 move = new Vector3(0.0f,0.0f,0.0f);
-			if( v > 0 )
+		{			
+			if( v > 0.05f )
 			{
 				move.x += 0.1f;
-				move.z += 0.1f;
+				move.z += 0.1f;moved = true;
 			}
-			if( v < 0 )
+			else if( v < -0.05f )
 			{
 				move.x -= 0.1f;
-				move.z -= 0.1f;
+				move.z -= 0.1f;moved = true;
 			}
-			if( h < 0 )
+			if( h < -0.05f )
 			{
 				move.x -= 0.1f;
-				move.z += 0.1f;
+				move.z += 0.1f;moved = true;
 			}
-			if( h > 0 )
+			else if( h > 0.05f )
 			{
 				move.x += 0.1f;
-				move.z -= 0.1f;
+				move.z -= 0.1f;moved = true;
 			}
-			gameObject.transform.Translate(move*Time.deltaTime*speed);
 		}
 		else if( movementMode == 2) // diagonal mode 
 		{
-			Vector3 move = new Vector3(0.0f,0.0f,0.0f);
-			if( v > 0 )
+			
+			if( v > 0.05f )
 			{
 				move.x = Mathf.Min(0.1f, move.x+0.1f);
-				move.z = Mathf.Min(0.1f, move.z+0.1f);
+				move.z = Mathf.Min(0.1f, move.z+0.1f);moved = true;
 			}
-			if( v < 0 )
+			else if( v < -0.05f )
 			{
 				move.x =  Mathf.Max(-0.1f, move.x-0.1f);
-				move.z =  Mathf.Max(-0.1f, move.z-0.1f);					
+				move.z =  Mathf.Max(-0.1f, move.z-0.1f);moved = true;					
 			}
-			if( h < 0 )
+			if( h < -0.05f )
 			{
 				move.x =  Mathf.Max(-0.1f, move.x-0.1f);
-				move.z = Mathf.Min(0.1f, move.z+0.1f);
+				move.z = Mathf.Min(0.1f, move.z+0.1f);moved = true;
 			}
-			if( h > 0 )
+			else if( h > 0.05f )
 			{
 				move.x = Mathf.Min(0.1f, move.x+0.1f);
-				move.z =  Mathf.Max(-0.1f, move.z-0.1f);					
+				move.z =  Mathf.Max(-0.1f, move.z-0.1f);moved = true;					
 			}
 			// when moving diagnoal reduce walk speed by sqrt(2)
 			if( move.x != 0.0f && move.z != 0.0f)
@@ -206,8 +202,51 @@ public class PlayerController : MonoBehaviour {
 				move.x /= Mathf.Sqrt( 2.0f );
 				move.z /= Mathf.Sqrt( 2.0f );
 			}
-			gameObject.transform.Translate(move*Time.deltaTime*speed);
 		}
+		// apply the movement-vector to the player if he moved
+		if(moved)			
+		{
+			gameObject.transform.Translate(move*Time.deltaTime*speed);
+			lastMove = new Vector3( move.x,move.y,move.z ); // save last move in case the player moved
+			
+			// fade out movement tutorial
+			if(!tutMoveDone)
+			{
+				gui.fadeOutGuiElement(Tutorials.move);
+				tutMoveDone=true;
+			}
+		}
+		else if(lastMove.magnitude > THRESH_FOR_INERTIA) // inertia
+		{
+			gameObject.transform.Translate(lastMove*Time.deltaTime*speed);
+			//simply reduce inertia quadratic
+			lastMove =  new Vector3( lastMove.x* inertiaMultiplier,lastMove.y* inertiaMultiplier,lastMove.z* inertiaMultiplier ); 					
+			moved = true;
+		}
+		
+		//set the players Y pos depending on the terrain
+		// only if he was moved by player or inertia
+		if( moved ) 
+		{
+			setPlayersYPosition();
+		}
+	}
+	private void setPlayersYPosition()
+	{
+		float newYPos = gameObject.transform.position.y;
+		try
+		{
+			//newYPos = actTile.returnPlayerPos(gameObject.transform.position.x,gameObject.transform.position.z);
+			int a = 0;
+		}
+		catch(System.MissingMethodException e)
+		{
+			newYPos = gameObject.transform.position.y;
+		}
+		float diff = newYPos-gameObject.transform.position.y;
+		if (Mathf.Abs(diff) > 0.0001f)
+			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y,0.0f));
+	
 	}
 	void OnTriggerEnter (Collider other)
 	{
@@ -237,7 +276,8 @@ public class PlayerController : MonoBehaviour {
 			}
 			
 			// update tile, pass the direction along
-			actTile.showNextTile(dir);			
+			actTile.showNextTile(dir);
+			setPlayersYPosition();
 		}
 		if( other.gameObject.tag == "Interactable")
 		{
@@ -262,11 +302,14 @@ public class PlayerController : MonoBehaviour {
         GUI.Label(new Rect(x,y,120,20), "Progress: 0"+ progress.ToString("#.##"));
 		progress = GUI.HorizontalSlider(new Rect(x, y+20, 300, 10), progress, 0.00f, 0.99f);
 		//speed slider
-		GUI.Label(new Rect(x,y+40,60,20), "Speed: "+speed.ToString(CultureInfo.InvariantCulture));
-        speed = GUI.HorizontalSlider(new Rect(x, y+60, 300, 10), speed, 0f, 500.0f);        
+		GUI.Label(new Rect(x,y+40,120,20), "Speed: "+speed.ToString(CultureInfo.InvariantCulture));
+        speed = GUI.HorizontalSlider(new Rect(x, y+60, 300, 10), speed, 0f, 500.0f);
+		//inertia multiplier slider
+		GUI.Label(new Rect(x,y+80,200,20), "InertiaMultiplier: "+inertiaMultiplier.ToString("#.###"));
+        inertiaMultiplier = GUI.HorizontalSlider(new Rect(x, y+100, 300, 10), inertiaMultiplier, 0.8f, 1.0f);       
 		//movement style slider
-		GUI.Label(new Rect(x,y+80,150,20), "AlternateMoveStyle:");
-		float test = GUI.HorizontalSlider(new Rect(x, y+100, 50, 10), movementMode, 0.0f, 2.0f);
+		GUI.Label(new Rect(x,y+120,150,20), "AlternateMoveStyle:");
+		float test = GUI.HorizontalSlider(new Rect(x, y+140, 50, 10), movementMode, 0.0f, 2.0f);
 		
 		if( test > 1.5f) 
 			movementMode = 2;
