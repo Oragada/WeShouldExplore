@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
+using Assets.Scripts.InteractableBehaviour;
 using UnityEditor;
 using UnityEngine;
 using System.Linq;
@@ -24,23 +25,22 @@ public class PlayerController : MonoBehaviour {
 	
 	//privates
 	private bool isSitting=false;
-	private bool isInteracting=false;	
+	private bool isInteracting=false;
 	private int movementMode = 0;
 	// interactive stuff
 	private float progress=0.0f;
 	private bool sit = false;
 	private bool interact = false;
-	private List<Interactive> inRangeElements;
-	private float THRESH_FOR_NO_COLLISION = 0.1f;
-	private float THRESH_FOR_INERTIA = 0.006f;
-	private Vector3 lastMove= new Vector3(0.0f,0.0f,0.0f);
+    private List<InteractBehaviour> inRangeElements;
+    private const float THRESH_FOR_NO_COLLISION = 0.1f;
+    private const float THRESH_FOR_INERTIA = 0.006f;
+    private Vector3 lastMove= new Vector3(0.0f,0.0f,0.0f);
 	
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
-		inRangeElements = new List<Interactive>();
+		inRangeElements = new List<InteractBehaviour>();
 	}	
-	
 	
 	void Update () 
 	{
@@ -69,7 +69,7 @@ public class PlayerController : MonoBehaviour {
 				gameObject.transform.localScale = new Vector3(1.0f,0.5f,1.0f);				
 				gameObject.transform.Translate(new Vector3(0.0f,-0.25f,0.0f));
 				isSitting = true;
-				playSittingSound();
+				PlaySittingSound();
 			}
 			else
 			{
@@ -82,8 +82,6 @@ public class PlayerController : MonoBehaviour {
 		
 		if( interact )
         {
-            actTile.Interact(gameObject.transform.position, this);
-
 			if(!tutInteractDone)
 			{
 				gui.fadeOutGuiElement(Tutorials.interact);
@@ -111,19 +109,16 @@ public class PlayerController : MonoBehaviour {
 		
 		if ( !isSitting)
 		{			
-			movement(v,h);
+			Movement(v,h);
 		}	
 	}
-	private void checkProgress()
-	{
-		if( progress <= THRESH_FOR_NO_COLLISION)
-		{
-			rigidbody.isKinematic = true;
-		}
-		else 
-			rigidbody.isKinematic = false;
-	}
-	private void movement(float v, float h)
+	
+    private void checkProgress()
+    {
+        rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION;
+    }
+
+    private void Movement(float v, float h)
 	{
 		bool moved=false;
 		Vector3 move = new Vector3(0.0f,0.0f,0.0f);
@@ -231,7 +226,8 @@ public class PlayerController : MonoBehaviour {
 			setPlayersYPosition();
 		}
 	}
-	private void setPlayersYPosition()
+	
+    private void setPlayersYPosition()
 	{
 		float newYPos = gameObject.transform.position.y;
 		try
@@ -248,7 +244,8 @@ public class PlayerController : MonoBehaviour {
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y,0.0f));
 	
 	}
-	void OnTriggerEnter (Collider other)
+
+    void OnTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
 		{
@@ -302,35 +299,43 @@ public class PlayerController : MonoBehaviour {
 		}
 		if( other.gameObject.tag == "Interactable")
 		{
-			Interactive addThis = other.GetComponent<Interactive>();
+			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
 			inRangeElements.Add(addThis);
 		}
 	}
+
 	void OnTriggerExit(Collider other)
 	{
 		if( other.gameObject.tag == "Interactable")
 		{
-			Interactive removeThis = other.GetComponent<Interactive>();
+			InteractBehaviour removeThis = other.GetComponent<InteractBehaviour>();
 			inRangeElements.Remove(removeThis);
 		}
-		
 	}
+
     void OnGUI()
     {
 		int x=25;
 		int y=415;
+
 		//progressbar
         GUI.Label(new Rect(x,y,120,20), "Progress: 0"+ progress.ToString("#.##"));
 		progress = GUI.HorizontalSlider(new Rect(x, y+20, 300, 10), progress, 0.00f, 0.99f);
+
 		//speed slider
 		GUI.Label(new Rect(x,y+40,120,20), "Speed: "+speed.ToString(CultureInfo.InvariantCulture));
         speed = GUI.HorizontalSlider(new Rect(x, y+60, 300, 10), speed, 0f, 500.0f);
+
 		//inertia multiplier slider
 		GUI.Label(new Rect(x,y+80,200,20), "InertiaMultiplier: "+inertiaMultiplier.ToString("#.###"));
-        inertiaMultiplier = GUI.HorizontalSlider(new Rect(x, y+100, 300, 10), inertiaMultiplier, 0.8f, 1.0f);       
+        inertiaMultiplier = GUI.HorizontalSlider(new Rect(x, y+100, 300, 10), inertiaMultiplier, 0.8f, 1.0f);    
+   
 		//movement style slider
 		GUI.Label(new Rect(x,y+120,150,20), "AlternateMoveStyle:");
 		float test = GUI.HorizontalSlider(new Rect(x, y+140, 50, 10), movementMode, 0.0f, 2.0f);
+
+        //in range elements count
+        GUI.Label(new Rect(x, y+160, 20,20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
 		
 		if( test > 1.5f) 
 			movementMode = 2;
@@ -339,7 +344,8 @@ public class PlayerController : MonoBehaviour {
 		else
 			movementMode = 0;			
     }
-	private void playSittingSound()
+
+	private void PlaySittingSound()
 	{
 		foreach ( AudioSource sound in GetComponentsInChildren<AudioSource>())
 		{
