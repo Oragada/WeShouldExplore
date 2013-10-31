@@ -9,6 +9,8 @@ using System.Collections;
 //public enum for use in ActiveTile and WorldGeneration as well
 public enum Direction {North,South,East,West,None};
 
+public enum CarryObject {Nothing, Flower, Bouquet, Leaf}
+
 public class PlayerController : MonoBehaviour {
 	
 	//publics
@@ -35,11 +37,21 @@ public class PlayerController : MonoBehaviour {
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
     private const float THRESH_FOR_INERTIA = 0.006f;
     private Vector3 lastMove= new Vector3(0.0f,0.0f,0.0f);
+
+    //Carried object
+    private CarryObject Obj { get; set; }
+    private List<Transform> carryList;
 	
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
 		inRangeElements = new List<InteractBehaviour>();
+
+        //Obj = CarryObject.Nothing;
+
+        carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
+
+        PickUpObject(CarryObject.Flower);
 	}	
 	
 	void Update () 
@@ -89,7 +101,8 @@ public class PlayerController : MonoBehaviour {
 			}
 			if( inRangeElements.Count > 0)
 			{
-				inRangeElements[0].activate(progress);
+				CarryObject co = inRangeElements[0].activate(progress);
+                PickUpObject(co);
 			}
 		}
 		else
@@ -113,6 +126,69 @@ public class PlayerController : MonoBehaviour {
 		}	
 	}
 	
+    public void PickUpObject(CarryObject pickedObject)
+    {
+        //Check combination
+        CarryObject nObj = CombineObject(pickedObject);
+
+
+        //Set CarryObject to new object
+        Obj = nObj;
+
+        SetCarryShow();
+    }
+
+    private CarryObject CombineObject(CarryObject newObject)
+    {
+        switch (Obj)
+        {
+            case CarryObject.Nothing:
+            case CarryObject.Leaf:
+                return newObject;
+            case CarryObject.Bouquet:
+            case CarryObject.Flower:
+                switch (newObject)
+                {
+                    case CarryObject.Flower:
+                        return CarryObject.Bouquet;
+                    default:
+                        return newObject;
+                }
+            default:
+                return CarryObject.Nothing;
+        }
+    }
+
+    private void SetCarryShow()
+    {
+        string ObjName;
+
+        switch (Obj)
+        {
+            case CarryObject.Nothing:
+                ObjName = "Nothing";
+                break;
+            case CarryObject.Leaf:
+                ObjName = "Leaf";
+                break;
+            case CarryObject.Flower:
+                ObjName = "SingleFlower";
+                break;
+            case CarryObject.Bouquet:
+                ObjName = "Bouquet";
+                break;
+            default:
+                ObjName = "Nothing";
+                break;
+        }
+
+        carryList.ForEach(e => e.gameObject.SetActive(false));
+
+        Transform newRend = carryList.FirstOrDefault(e => e.name == ObjName);
+
+        newRend.gameObject.SetActive(true);
+    }
+
     private void checkProgress()
     {
         rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION;
@@ -315,8 +391,8 @@ public class PlayerController : MonoBehaviour {
 
     void OnGUI()
     {
-		int x=25;
-		int y=415;
+		const int x = 25;
+		const int y = 315;
 
 		//progressbar
         GUI.Label(new Rect(x,y,120,20), "Progress: 0"+ progress.ToString("#.##"));
@@ -335,7 +411,10 @@ public class PlayerController : MonoBehaviour {
 		float test = GUI.HorizontalSlider(new Rect(x, y+140, 50, 10), movementMode, 0.0f, 2.0f);
 
         //in range elements count
-        GUI.Label(new Rect(x, y+160, 20,20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
+        GUI.Label(new Rect(x, y + 160, 100, 20), "Debug:");
+        //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
+        //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements[1].ToString());
+        //GUI.Label(new Rect(x, y + 180, 100, 20), Obj.ToString());
 		
 		if( test > 1.5f) 
 			movementMode = 2;
@@ -357,3 +436,6 @@ public class PlayerController : MonoBehaviour {
 		}		
 	}
 }
+
+
+

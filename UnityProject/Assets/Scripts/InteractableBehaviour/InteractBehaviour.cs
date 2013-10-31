@@ -7,7 +7,7 @@ namespace Assets.Scripts.InteractableBehaviour
         public float triggerRadius=1.0f;
 	
         public abstract void customAwake();
-        public abstract void activate(float playerProgress);
+        public abstract CarryObject activate(float playerProgress);
         public abstract string customInteractiveText();
 
 
