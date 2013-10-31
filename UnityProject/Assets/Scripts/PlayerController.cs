@@ -257,22 +257,43 @@ public class PlayerController : MonoBehaviour {
 			if( other.name == "WestTrigger")
 			{
 				dir = Direction.West;
-				gameObject.transform.Translate(new Vector3((-other.gameObject.transform.position.x*2)-2.0f,0.0f,0.0f),Space.World); // move to east 
+				
+				//gameObject.transform.Translate(new Vector3((-other.gameObject.transform.position.x*2)-2.0f,0.0f,0.0f),Space.World); // move to east MIKE old code
+				
+				Vector3 position = gameObject.transform.position;
+				position.x = 18;
+				gameObject.transform.position = position;
+				
 			}
 			else if( other.name == "EastTrigger")
 			{
 				dir = Direction.East;
-				gameObject.transform.Translate(new Vector3(-(other.gameObject.transform.position.x*2)+2.0f,0.0f,0.0f),Space.World); // move to west 
+				
+				//gameObject.transform.Translate(new Vector3(-(other.gameObject.transform.position.x*2)+2.0f,0.0f,0.0f),Space.World); // move to west 
+				
+				Vector3 position = gameObject.transform.position;
+				position.x = 1;
+				gameObject.transform.position = position;
+				
 			}
 			else if( other.name == "NorthTrigger")
 			{
 				dir = Direction.North;
-				gameObject.transform.Translate(new Vector3(0.0f, 0.0f, -(other.gameObject.transform.position.z*2)+2.0f),Space.World); // move to south 
+				
+				//gameObject.transform.Translate(new Vector3(0.0f, 0.0f, -(other.gameObject.transform.position.z*2)+2.0f),Space.World); // move to south 
+				
+				Vector3 position = gameObject.transform.position;
+				position.z = 1;
+				gameObject.transform.position = position;
 			}
 			else if( other.name == "SouthTrigger")
 			{
 				dir = Direction.South;
-				gameObject.transform.Translate(new Vector3(0.0f, 0.0f, (-other.gameObject.transform.position.z*2)-2.0f),Space.World); // move to south 
+				//gameObject.transform.Translate(new Vector3(0.0f, 0.0f, (-other.gameObject.transform.position.z*2)-2.0f),Space.World); // move to south 
+				
+				Vector3 position = gameObject.transform.position;
+				position.z = 18;
+				gameObject.transform.position = position;
 			}
 			
 			// update tile, pass the direction along
