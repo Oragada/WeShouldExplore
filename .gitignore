@@ -225,6 +225,7 @@ pip-log.txt
 *.pidb
 *.unityproj
 .DS_Store
+/UnityProject/Library/metadata/
 /UnityProject/Library/FailedAssetImports.txt
 /UnityProject/Library/cache/
 /UnityProject/Library/previews/
