@@ -8,7 +8,7 @@ namespace Assets.Scripts.InteractableBehaviour
         private Color activeColor;
         private bool isActive;
 	
-        public override void customAwake()
+        void Awake()
         {
             inactiveColor = new Color(0.0f, 96.0f/255.0f, 5.0f/255.0f,1.0f);
             activeColor = new Color(90.0f/255.0f, 122.0f/255.0f, 96.0f/255.0f,1.0f);

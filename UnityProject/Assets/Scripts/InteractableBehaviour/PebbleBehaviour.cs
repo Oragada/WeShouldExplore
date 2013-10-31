@@ -7,7 +7,7 @@ namespace Assets.Scripts.InteractableBehaviour
         private bool isActive=false;
         private Component pebble;
 	
-        public override void customAwake()
+        void Awake()
         {
             SphereCollider trigger = GetComponent<SphereCollider>();
             trigger.radius = triggerRadius;

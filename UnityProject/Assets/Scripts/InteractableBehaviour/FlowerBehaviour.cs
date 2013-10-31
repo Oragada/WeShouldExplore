@@ -11,7 +11,7 @@ namespace Assets.Scripts.InteractableBehaviour
 
         readonly Color[] colors = new []{new Color(1,0,0), new Color(0,0,1) };
 
-        public override void customAwake()
+        void Awake()
         {
             Component head = GetGhildComponent("Head");
             head.renderer.material.color = colors[1];

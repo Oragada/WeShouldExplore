@@ -13,7 +13,7 @@ namespace Assets.Scripts.InteractableBehaviour
 
         void Awake()
         {
-            GetComponentsInChildren<InteractBehaviour>().ToList().ForEach(c => c.customAwake());
+            //GetComponentsInChildren<InteractBehaviour>().ToList().ForEach(c => c.customAwake());
         }
 
         // Update is called once per frame
