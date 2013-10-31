@@ -5,9 +5,12 @@ using UnityEditor;
 using UnityEngine;
 using System.Linq;
 using System.Collections;
+using Assets.Scripts;
 
 //public enum for use in ActiveTile and WorldGeneration as well
 public enum Direction {North,South,East,West,None};
+
+public enum CarryObject {Nothing, Flower, Bouquet, Leaf}
 
 public class PlayerController : MonoBehaviour {
 	
@@ -15,6 +18,7 @@ public class PlayerController : MonoBehaviour {
 	public float speed;
 	public float inertiaMultiplier=0.1f;
 	public ActiveTile actTile;
+	//public GroundGen groundGen;
 	
 	// gui elements
 	public TutorialGui gui;
@@ -24,6 +28,7 @@ public class PlayerController : MonoBehaviour {
 	private bool tutInteractDone=false;
 	
 	//privates
+	private GameObject groundTile;
 	private bool isSitting=false;
 	private bool isInteracting=false;
 	private int movementMode = 0;
@@ -35,11 +40,28 @@ public class PlayerController : MonoBehaviour {
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
     private const float THRESH_FOR_INERTIA = 0.006f;
     private Vector3 lastMove= new Vector3(0.0f,0.0f,0.0f);
+
+    //Carried object
+    private CarryObject Obj { get; set; }
+    private List<Transform> carryList;
 	
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
+		//groundGen = this.GetComponent<GroundGen>;
 		inRangeElements = new List<InteractBehaviour>();
+<<<<<<< HEAD
+		
+		groundTile = GameObject.Find("GroundTile");
+		
+=======
+
+        //Obj = CarryObject.Nothing;
+
+        carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
+
+        PickUpObject(CarryObject.Flower);
+>>>>>>> 138e80af31f06abe40d9e93ddec7c7c8357053dd
 	}	
 	
 	void Update () 
@@ -89,7 +111,8 @@ public class PlayerController : MonoBehaviour {
 			}
 			if( inRangeElements.Count > 0)
 			{
-				inRangeElements[0].activate(progress);
+				CarryObject co = inRangeElements[0].activate(progress);
+                PickUpObject(co);
 			}
 		}
 		else
@@ -113,6 +136,69 @@ public class PlayerController : MonoBehaviour {
 		}	
 	}
 	
+    public void PickUpObject(CarryObject pickedObject)
+    {
+        //Check combination
+        CarryObject nObj = CombineObject(pickedObject);
+
+
+        //Set CarryObject to new object
+        Obj = nObj;
+
+        SetCarryShow();
+    }
+
+    private CarryObject CombineObject(CarryObject newObject)
+    {
+        switch (Obj)
+        {
+            case CarryObject.Nothing:
+            case CarryObject.Leaf:
+                return newObject;
+            case CarryObject.Bouquet:
+            case CarryObject.Flower:
+                switch (newObject)
+                {
+                    case CarryObject.Flower:
+                        return CarryObject.Bouquet;
+                    default:
+                        return newObject;
+                }
+            default:
+                return CarryObject.Nothing;
+        }
+    }
+
+    private void SetCarryShow()
+    {
+        string ObjName;
+
+        switch (Obj)
+        {
+            case CarryObject.Nothing:
+                ObjName = "Nothing";
+                break;
+            case CarryObject.Leaf:
+                ObjName = "Leaf";
+                break;
+            case CarryObject.Flower:
+                ObjName = "SingleFlower";
+                break;
+            case CarryObject.Bouquet:
+                ObjName = "Bouquet";
+                break;
+            default:
+                ObjName = "Nothing";
+                break;
+        }
+
+        carryList.ForEach(e => e.gameObject.SetActive(false));
+
+        Transform newRend = carryList.FirstOrDefault(e => e.name == ObjName);
+
+        newRend.gameObject.SetActive(true);
+    }
+
     private void checkProgress()
     {
         rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION;
@@ -232,8 +318,7 @@ public class PlayerController : MonoBehaviour {
 		float newYPos = gameObject.transform.position.y;
 		try
 		{
-			//newYPos = actTile.returnPlayerPos(gameObject.transform.position.x,gameObject.transform.position.z);
-			int a = 0;
+			newYPos = groundTile.GetComponent<GroundGen>().returnPlayerPos(gameObject.transform.position.x,gameObject.transform.position.z);
 		}
 		catch(System.MissingMethodException e)
 		{
@@ -258,7 +343,7 @@ public class PlayerController : MonoBehaviour {
 				//gameObject.transform.Translate(new Vector3((-other.gameObject.transform.position.x*2)-2.0f,0.0f,0.0f),Space.World); // move to east MIKE old code
 				
 				Vector3 position = gameObject.transform.position;
-				position.x = 18;
+				position.z = 1;
 				gameObject.transform.position = position;
 				
 			}
@@ -269,7 +354,7 @@ public class PlayerController : MonoBehaviour {
 				//gameObject.transform.Translate(new Vector3(-(other.gameObject.transform.position.x*2)+2.0f,0.0f,0.0f),Space.World); // move to west 
 				
 				Vector3 position = gameObject.transform.position;
-				position.x = 1;
+				position.z = 18;
 				gameObject.transform.position = position;
 				
 			}
@@ -280,7 +365,7 @@ public class PlayerController : MonoBehaviour {
 				//gameObject.transform.Translate(new Vector3(0.0f, 0.0f, -(other.gameObject.transform.position.z*2)+2.0f),Space.World); // move to south 
 				
 				Vector3 position = gameObject.transform.position;
-				position.z = 1;
+				position.x = 1;
 				gameObject.transform.position = position;
 			}
 			else if( other.name == "SouthTrigger")
@@ -289,12 +374,17 @@ public class PlayerController : MonoBehaviour {
 				//gameObject.transform.Translate(new Vector3(0.0f, 0.0f, (-other.gameObject.transform.position.z*2)-2.0f),Space.World); // move to south 
 				
 				Vector3 position = gameObject.transform.position;
-				position.z = 18;
+				position.x = 18;
 				gameObject.transform.position = position;
 			}
 			
 			// update tile, pass the direction along
-			actTile.showNextTile(dir);
+			groundTile.GetComponent<GroundGen>().showNextTile(dir);
+			//
+			//
+			//
+			//
+			//groundTile.GetComponent<GroundGen>().
 			setPlayersYPosition();
 		}
 		if( other.gameObject.tag == "Interactable")
@@ -315,8 +405,8 @@ public class PlayerController : MonoBehaviour {
 
     void OnGUI()
     {
-		int x=25;
-		int y=415;
+		const int x = 25;
+		const int y = 315;
 
 		//progressbar
         GUI.Label(new Rect(x,y,120,20), "Progress: 0"+ progress.ToString("#.##"));
@@ -335,7 +425,10 @@ public class PlayerController : MonoBehaviour {
 		float test = GUI.HorizontalSlider(new Rect(x, y+140, 50, 10), movementMode, 0.0f, 2.0f);
 
         //in range elements count
-        GUI.Label(new Rect(x, y+160, 20,20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
+        GUI.Label(new Rect(x, y + 160, 100, 20), "Debug:");
+        //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
+        //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements[1].ToString());
+        //GUI.Label(new Rect(x, y + 180, 100, 20), Obj.ToString());
 		
 		if( test > 1.5f) 
 			movementMode = 2;
@@ -357,3 +450,6 @@ public class PlayerController : MonoBehaviour {
 		}		
 	}
 }
+
+
+

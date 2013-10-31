@@ -7,20 +7,23 @@ namespace Assets.Scripts.InteractableBehaviour
         private bool isActive=false;
         private Component pebble;
 	
-        public override void customAwake()
+        void Awake()
         {
-            //SphereCollider trigger = GetComponent<SphereCollider>();
-            //trigger.radius = triggerRadius;
+            SphereCollider trigger = GetComponent<SphereCollider>();
+            trigger.radius = triggerRadius;
+
             pebble = GetGhildComponent("PebbleObject");
             pebble.rigidbody.isKinematic = true;
         }
 
-        public override void activate(float playerProgress)
+        public override CarryObject activate(float playerProgress)
         {
             pebble.rigidbody.isKinematic = !isActive;
             isActive = !isActive;
 		
             //transform.position = new Vector3(transform.position.x,transform.position.y+5.0f, transform.position.z);
+
+            return CarryObject.Nothing;
         }
 
         public override string customInteractiveText()

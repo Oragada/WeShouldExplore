@@ -8,7 +8,7 @@ namespace Assets.Scripts.InteractableBehaviour
         private Color activeColor;
         private bool isActive;
 	
-        public override void customAwake()
+        void Awake()
         {
             inactiveColor = new Color(0.0f, 96.0f/255.0f, 5.0f/255.0f,1.0f);
             activeColor = new Color(90.0f/255.0f, 122.0f/255.0f, 96.0f/255.0f,1.0f);
@@ -17,11 +17,13 @@ namespace Assets.Scripts.InteractableBehaviour
             SphereCollider trigger = GetComponentInChildren<SphereCollider>();
             trigger.radius = triggerRadius;
         }
-        public override void activate(float playerProgress)
+        public override CarryObject activate(float playerProgress)
         {
             isActive = !isActive;
             Component bush = GetGhildComponent("BushObject");
             bush.renderer.material.color = isActive ? activeColor : inactiveColor;
+
+            return CarryObject.Leaf;
         }
 
         public override  string customInteractiveText()

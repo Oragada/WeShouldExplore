@@ -7,11 +7,11 @@ namespace Assets.Scripts.InteractableBehaviour
 
         private bool isActive = false;
 
-        bool flowerPicked = false;
+        bool flowerPicked;
 
         readonly Color[] colors = new []{new Color(1,0,0), new Color(0,0,1) };
 
-        public override void customAwake()
+        void Awake()
         {
             Component head = GetGhildComponent("Head");
             head.renderer.material.color = colors[1];
@@ -20,7 +20,7 @@ namespace Assets.Scripts.InteractableBehaviour
             //rigidbody.isKinematic = true;
         }
 
-        public override void activate(float playerProgress)
+        public override CarryObject activate(float playerProgress)
         {
             if (!flowerPicked)
             {
@@ -29,12 +29,16 @@ namespace Assets.Scripts.InteractableBehaviour
 
                 Component head = GetGhildComponent("Head");
 
-                head.renderer.enabled = false;
+                head.gameObject.SetActive(false);
+
+                return CarryObject.Flower;
 
                 //rigidbody.isKinematic = !isActive;
 
                 //transform.position = new Vector3(transform.position.x,transform.position.y+5.0f, transform.position.z);
             }
+
+            return CarryObject.Nothing;
         }
 
         public override string customInteractiveText()

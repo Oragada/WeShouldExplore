@@ -7,10 +7,10 @@ var height : int;
 var move = 0; // move offset
 
 //Noises
-var perlin;
-var fractal;
-perlin = new Perlin();
-fractal = new FractalNoise(2,1,1, perlin);
+//var perlin;
+//var fractal;
+//perlin = new Perlin();
+//fractal = new FractalNoise(2,1,1, perlin);
 
 //Noise properties
 @Range (0.0, 1.0)
@@ -144,8 +144,31 @@ function returnPlayerPos(x,z) {
 }
 
 function returnGroundY(x,z) {
+	//return fractal.HybridMultifractal(z*frequency+(zOff*frequency),x*frequency+(xOff*frequency),yOff)*scale;
+	return Mathf.PerlinNoise(z*frequency+(zOff*frequency),x*frequency+(xOff*frequency))*scale;
 
-	return fractal.HybridMultifractal(z*frequency+(zOff*frequency),x*frequency+(xOff*frequency),yOff)*scale;
+}
 
 
+function showNextTile(dir) {
+
+// 	var myMaterial = renderer.material;
+// 	myMaterial.SetColor("_Color",new Color(Random.value,Random.value,Random.value,1.0f));
+	Debug.Log(dir);	
+	
+	switch(dir) {
+		case 0: //North
+			xOff += 19; 
+		break;
+		case 1: //South
+			xOff -= 19;
+		break;
+		case 2:
+			zOff -= 19;
+		break;
+		case 3:
+			zOff += 19;
+		break;
+	}
+	
 }
