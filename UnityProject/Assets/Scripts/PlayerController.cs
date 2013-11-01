@@ -51,16 +51,23 @@ public class PlayerController : MonoBehaviour {
 		//groundGen = this.GetComponent<GroundGen>;
 		inRangeElements = new List<InteractBehaviour>();
 
+<<<<<<< HEAD
 		
 		groundTile = GameObject.Find("GroundTile");
 		
+=======
+>>>>>>> 138e80af31f06abe40d9e93ddec7c7c8357053dd
         //Obj = CarryObject.Nothing;
 
         carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
 
         PickUpObject(CarryObject.Flower);
+<<<<<<< HEAD
 		
 	}
+=======
+	}	
+>>>>>>> 138e80af31f06abe40d9e93ddec7c7c8357053dd
 	
 	void Update () {
 		// Cache the inputs.
