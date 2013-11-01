@@ -61,7 +61,6 @@ public class PlayerController : MonoBehaviour {
 		
 	}	
 
-	
 	void Update () {
 		// Cache the inputs.
         float h = Input.GetAxis("Horizontal");
@@ -97,7 +96,7 @@ public class PlayerController : MonoBehaviour {
 				gameObject.transform.Translate(new Vector3(0.0f,0.25f,0.0f));
 				isSitting = false;
 			}
-		}	
+		}
 		
 		if( interact )
         {
@@ -193,7 +192,7 @@ public class PlayerController : MonoBehaviour {
 
         Transform newRend = carryList.FirstOrDefault(e => e.name == ObjName);
 
-   //     newRend.gameObject.SetActive(true);
+        newRend.gameObject.SetActive(true);
     }
 
     private void checkProgress()
@@ -403,7 +402,7 @@ public class PlayerController : MonoBehaviour {
     void OnGUI()
     {
 		const int x = 25;
-		const int y = 315;
+		const int y = 215;
 
 		//progressbar
         GUI.Label(new Rect(x,y,120,20), "Progress: 0"+ progress.ToString("#.##"));
@@ -425,7 +424,7 @@ public class PlayerController : MonoBehaviour {
         GUI.Label(new Rect(x, y + 160, 100, 20), "Debug:");
         //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
         //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements[1].ToString());
-        //GUI.Label(new Rect(x, y + 180, 100, 20), Obj.ToString());
+        GUI.Label(new Rect(x, y + 180, 100, 20), Obj.ToString());
 		
 		if( test > 1.5f) 
 			movementMode = 2;
