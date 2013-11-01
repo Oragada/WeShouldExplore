@@ -31,7 +31,7 @@ public class PlayerController : MonoBehaviour {
 	private GameObject groundTile;
 	private bool isSitting=false;
 	private bool isInteracting=false;
-	private int movementMode = 0;
+	private int movementMode = -1;
 	// interactive stuff
 	private float progress=0.0f;
 	private bool sit = false;
@@ -57,7 +57,7 @@ public class PlayerController : MonoBehaviour {
 
         carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
 
-        PickUpObject(CarryObject.Flower);
+        PickUpObject(CarryObject.Nothing);
 		
 	}	
 
@@ -85,7 +85,7 @@ public class PlayerController : MonoBehaviour {
 					tutSitDone=true;
 				}		
 				//sit down
-				gameObject.transform.localScale = new Vector3(1.0f,0.5f,1.0f);				
+				gameObject.transform.localScale = new Vector3(0.5f,0.5f,0.5f);				
 				gameObject.transform.Translate(new Vector3(0.0f,-0.25f,0.0f));
 				isSitting = true;
 				PlaySittingSound();
@@ -93,7 +93,7 @@ public class PlayerController : MonoBehaviour {
 			else
 			{
 				//stand up again
-				gameObject.transform.localScale = new Vector3(1.0f,1.0f,1.0f);
+				gameObject.transform.localScale = new Vector3(0.5f,1.0f,0.5f);
 				gameObject.transform.Translate(new Vector3(0.0f,0.25f,0.0f));
 				isSitting = false;
 			}
@@ -193,23 +193,25 @@ public class PlayerController : MonoBehaviour {
 
         Transform newRend = carryList.FirstOrDefault(e => e.name == ObjName);
 
-   //     newRend.gameObject.SetActive(true);
+        newRend.gameObject.SetActive(true);
     }
 
     private void checkProgress()
     {
         rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION;
-		
-//		progress+=0.00002f;
-//		inertiaMultiplier = 0.95f-(progress);
-//		speed = 65.0f - (progress*100.0f);
+        /*if (progress < 0.11f)
+        {
+            progress += 0.00002f;
+            inertiaMultiplier = 0.95f - (progress);
+            speed = 65.0f - (progress*100.0f);
+        }/**/
     }
 
     private void Movement(float v, float h)
 	{
 		bool moved=false;
 		Vector3 move = new Vector3(0.0f,0.0f,0.0f);
-		if( movementMode == 0) // DPAD mode
+		if( movementMode == 0 || movementMode ==-1) // DPAD mode
 		{			
 			if( v > 0.05f )
 			{
@@ -407,36 +409,38 @@ public class PlayerController : MonoBehaviour {
     void OnGUI()
     {
 		const int x = 25;
-		const int y = 315;
+		const int y = 400;
+        if (movementMode != -1)
+        {
+            //progressbar
+            GUI.Label(new Rect(x, y, 120, 20), "Progress: 0" + progress.ToString("#.##"));
+            progress = GUI.HorizontalSlider(new Rect(x, y + 20, 300, 10), progress, 0.00f, 0.99f);
 
-		//progressbar
-        GUI.Label(new Rect(x,y,120,20), "Progress: 0"+ progress.ToString("#.##"));
-		progress = GUI.HorizontalSlider(new Rect(x, y+20, 300, 10), progress, 0.00f, 0.99f);
+            //speed slider
+            GUI.Label(new Rect(x, y + 40, 120, 20), "Speed: " + speed.ToString(CultureInfo.InvariantCulture));
+            speed = GUI.HorizontalSlider(new Rect(x, y + 60, 300, 10), speed, 0f, 500.0f);
 
-		//speed slider
-		GUI.Label(new Rect(x,y+40,120,20), "Speed: "+speed.ToString(CultureInfo.InvariantCulture));
-        speed = GUI.HorizontalSlider(new Rect(x, y+60, 300, 10), speed, 0f, 500.0f);
+            //inertia multiplier slider
+            GUI.Label(new Rect(x, y + 80, 200, 20), "InertiaMultiplier: " + inertiaMultiplier.ToString("#.###"));
+            inertiaMultiplier = GUI.HorizontalSlider(new Rect(x, y + 100, 300, 10), inertiaMultiplier, 0.8f, 1.0f);
 
-		//inertia multiplier slider
-		GUI.Label(new Rect(x,y+80,200,20), "InertiaMultiplier: "+inertiaMultiplier.ToString("#.###"));
-        inertiaMultiplier = GUI.HorizontalSlider(new Rect(x, y+100, 300, 10), inertiaMultiplier, 0.8f, 1.0f);    
-   
-		//movement style slider
-		GUI.Label(new Rect(x,y+120,150,20), "AlternateMoveStyle:");
-		float test = GUI.HorizontalSlider(new Rect(x, y+140, 50, 10), movementMode, 0.0f, 2.0f);
+            //movement style slider
+            GUI.Label(new Rect(x, y + 120, 150, 20), "AlternateMoveStyle:");
+            float test = GUI.HorizontalSlider(new Rect(x, y + 140, 50, 10), movementMode, 0.0f, 2.0f);
 
-        //in range elements count
-        GUI.Label(new Rect(x, y + 160, 100, 20), "Debug:");
-        //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
-        //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements[1].ToString());
-        //GUI.Label(new Rect(x, y + 180, 100, 20), Obj.ToString());
-		
-		if( test > 1.5f) 
-			movementMode = 2;
-		else if( test > 0.5f)
-			movementMode = 1;
-		else
-			movementMode = 0;			
+            //in range elements count
+            GUI.Label(new Rect(x, y + 160, 100, 20), "Debug:");
+            //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
+            //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements[1].ToString());
+            GUI.Label(new Rect(x, y + 180, 100, 20), Obj.ToString());
+
+            if (test > 1.5f)
+                movementMode = 2;
+            else if (test > 0.5f)
+                movementMode = 1;
+            else
+                movementMode = 0;
+        }
     }
 
 	private void PlaySittingSound()

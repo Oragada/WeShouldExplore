@@ -14,7 +14,7 @@ namespace Assets.Scripts.InteractableBehaviour
         void Awake()
         {
             Component head = GetGhildComponent("Head");
-            head.renderer.material.color = colors[1];
+            head.renderer.material.color = colors[0];
             //SphereCollider trigger = GetComponent<SphereCollider>();
             //trigger.radius = triggerRadius;
             //rigidbody.isKinematic = true;
