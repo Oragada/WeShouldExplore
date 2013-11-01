@@ -1,6 +1,7 @@
 ﻿//#pragma strict
 
 var ground : Mesh;
+var groundCol : MeshCollider;
 var width : int;
 var height : int;
 
@@ -28,34 +29,26 @@ var yOff = 0;
 @Range (0, 19)
 var zOff = 0;
 
+var tileChangeFlag = 0;
 
 
 
 function Start() {
 
 	GenerateGround();
+	ChangeTerrain();
 	
 }
 
 function Update() {
 
-	ground = GetComponent(MeshFilter).mesh;
+	if(tileChangeFlag==1) {
 	
-	var vertices = ground.vertices;
+	ChangeTerrain();
 	
-	var index = 0;
+	tileChangeFlag=0;
 	
-	for(var i=0;i<width;i++) {
-		for(var j=0;j<height;j++) {
-			
-			vertices[index].y = returnGroundY(j,i);		
-			index++;
-		}
 	}
-	
-	ground.vertices = vertices;
-	ground.RecalculateNormals();
-
 
 }
 
@@ -114,9 +107,6 @@ function GenerateGround() {
 	
 	}
 	
-	
-	
-
 	//Assigns vertices, triangles and uvs to the ground mesh
 	
 	ground.vertices = vertices;
@@ -129,6 +119,7 @@ function GenerateGround() {
 	transform.localScale.x = 20/(width*1.0);
 	transform.localScale.z = 20/(height*1.0);
 	transform.localScale.y = transform.localScale.x;
+	
 
 }
 
@@ -144,17 +135,13 @@ function returnPlayerPos(x,z) {
 }
 
 function returnGroundY(x,z) {
-	//return fractal.HybridMultifractal(z*frequency+(zOff*frequency),x*frequency+(xOff*frequency),yOff)*scale;
+	
 	return Mathf.PerlinNoise(z*frequency+(zOff*frequency),x*frequency+(xOff*frequency))*scale;
 
 }
 
 
 function showNextTile(dir) {
-
-// 	var myMaterial = renderer.material;
-// 	myMaterial.SetColor("_Color",new Color(Random.value,Random.value,Random.value,1.0f));
-	Debug.Log(dir);	
 	
 	switch(dir) {
 		case 0: //North
@@ -171,4 +158,30 @@ function showNextTile(dir) {
 		break;
 	}
 	
+	Destroy(GetComponent(MeshCollider));
+	
+	tileChangeFlag = 1;
+	
+}
+
+function ChangeTerrain() {
+
+	ground = GetComponent(MeshFilter).mesh;
+	
+	var vertices = ground.vertices;
+	
+	var index = 0;
+	
+	for(var i=0;i<width;i++) {
+		for(var j=0;j<height;j++) {
+			
+			vertices[index].y = returnGroundY(j,i);		
+			index++;
+		}
+	}
+	
+	ground.vertices = vertices;
+	ground.RecalculateNormals();
+	
+	gameObject.AddComponent(MeshCollider);
 }

@@ -199,6 +199,10 @@ public class PlayerController : MonoBehaviour {
     private void checkProgress()
     {
         rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION;
+		
+//		progress+=0.00002f;
+//		inertiaMultiplier = 0.95f-(progress);
+//		speed = 65.0f - (progress*100.0f);
     }
 
     private void Movement(float v, float h)
