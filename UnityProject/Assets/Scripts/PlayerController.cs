@@ -8,7 +8,7 @@ using System.Collections;
 using Assets.Scripts;
 
 //public enum for use in ActiveTile and WorldGeneration as well
-public enum Direction {North,South,East,West,None};
+public enum Direction {North,South,East,West,None,NorthEast,NorthWest,SouthEast,SouthWest};
 
 public enum CarryObject {Nothing, Flower, Bouquet, Leaf}
 
@@ -39,8 +39,10 @@ public class PlayerController : MonoBehaviour {
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
     private const float THRESH_FOR_INERTIA = 0.006f;
-    private Vector3 lastMove= new Vector3(0.0f,0.0f,0.0f);
-
+    private float lastMove= 0.0f;
+	private Direction lastDir = Direction.None;
+	private GameObject sittingPlayerMesh;
+	private GameObject standingPlayerMesh;
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
@@ -58,7 +60,9 @@ public class PlayerController : MonoBehaviour {
         carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
 
         PickUpObject(CarryObject.Nothing);
-		
+		sittingPlayerMesh = transform.FindChild("player_sitting").gameObject;
+		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
+				
 	}	
 
 	
@@ -85,16 +89,21 @@ public class PlayerController : MonoBehaviour {
 					tutSitDone=true;
 				}		
 				//sit down
-				gameObject.transform.localScale = new Vector3(0.5f,0.5f,0.5f);				
-				gameObject.transform.Translate(new Vector3(0.0f,-0.25f,0.0f));
+				sittingPlayerMesh.SetActive(true);
+				standingPlayerMesh.SetActive(false);
+				//change the carrying position when sitting down
+				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,-0.15f,0.0f);
 				isSitting = true;
 				PlaySittingSound();
+				lastMove = 0.0f;				
 			}
 			else
 			{
 				//stand up again
-				gameObject.transform.localScale = new Vector3(0.5f,1.0f,0.5f);
-				gameObject.transform.Translate(new Vector3(0.0f,0.25f,0.0f));
+				sittingPlayerMesh.SetActive(false);
+				standingPlayerMesh.SetActive(true);
+				//change the carrying position when standing up again
+				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,+0.15f,0.0f);
 				isSitting = false;
 			}
 		}	
@@ -209,108 +218,100 @@ public class PlayerController : MonoBehaviour {
 
     private void Movement(float v, float h)
 	{
-		bool moved=false;
-		Vector3 move = new Vector3(0.0f,0.0f,0.0f);
+		Direction moved = Direction.None;
 		if( movementMode == 0 || movementMode ==-1) // DPAD mode
 		{			
 			if( v > 0.05f )
-			{
-				move.x = 0.1f;
-				moved = true;
-			}
+				moved = Direction.North;
 			else if( v < -0.05f )
-			{
-				move.x = -0.1f;
-				moved = true;
-			}
+				moved = Direction.South;
+			
 			if( h < -0.05f )
 			{
-				move.z = 0.1f;
-				moved = true;
-			}
-			if( h > 0.05f )
-			{
-				move.z = -0.1f;
-				moved = true;
-			}			
-		}
-		else if( movementMode == 1) // diagonal mode version one
-		{			
-			if( v > 0.05f )
-			{
-				move.x += 0.1f;
-				move.z += 0.1f;moved = true;
-			}
-			else if( v < -0.05f )
-			{
-				move.x -= 0.1f;
-				move.z -= 0.1f;moved = true;
-			}
-			if( h < -0.05f )
-			{
-				move.x -= 0.1f;
-				move.z += 0.1f;moved = true;
+				if(moved == Direction.North)
+					moved = Direction.NorthWest;
+				else if ( moved == Direction.South)
+					moved = Direction.SouthWest;
+				else
+					moved = Direction.West;
 			}
 			else if( h > 0.05f )
+			{			
+				if(moved == Direction.North)
+					moved = Direction.NorthEast;
+				else if ( moved == Direction.South)
+					moved = Direction.SouthEast;
+				else
+					moved = Direction.East;
+			}
+		}
+		else if( movementMode == 1) // diagonal mode version
+		{			
+			if( v > 0.05f )
+				moved = Direction.NorthWest;
+			else if( v < -0.05f )
+				moved = Direction.SouthEast;
+			if( h < -0.05f )	
 			{
-				move.x += 0.1f;
-				move.z -= 0.1f;moved = true;
+				if(moved == Direction.NorthWest)
+					moved = Direction.West;
+				else if ( moved == Direction.SouthEast)
+					moved = Direction.South;
+				else
+					moved = Direction.SouthWest;
+			}
+				
+			else if( h > 0.05f )
+			{
+				if(moved == Direction.NorthWest)
+					moved = Direction.North;
+				else if ( moved == Direction.SouthEast)
+					moved = Direction.East;
+				else
+					moved = Direction.NorthEast;
 			}
 		}
 		else if( movementMode == 2) // diagonal mode 
-		{
-			
-			if( v > 0.05f )
-			{
-				move.x = Mathf.Min(0.1f, move.x+0.1f);
-				move.z = Mathf.Min(0.1f, move.z+0.1f);moved = true;
-			}
-			else if( v < -0.05f )
-			{
-				move.x =  Mathf.Max(-0.1f, move.x-0.1f);
-				move.z =  Mathf.Max(-0.1f, move.z-0.1f);moved = true;					
-			}
-			if( h < -0.05f )
-			{
-				move.x =  Mathf.Max(-0.1f, move.x-0.1f);
-				move.z = Mathf.Min(0.1f, move.z+0.1f);moved = true;
-			}
-			else if( h > 0.05f )
-			{
-				move.x = Mathf.Min(0.1f, move.x+0.1f);
-				move.z =  Mathf.Max(-0.1f, move.z-0.1f);moved = true;					
-			}
-			// when moving diagnoal reduce walk speed by sqrt(2)
-			if( move.x != 0.0f && move.z != 0.0f)
-			{
-				move.x /= Mathf.Sqrt( 2.0f );
-				move.z /= Mathf.Sqrt( 2.0f );
-			}
+		{			
+			movementMode=-1;			
 		}
 		// apply the movement-vector to the player if he moved
-		if(moved)			
-		{
-			gameObject.transform.Translate(move*Time.deltaTime*speed);
-			lastMove = new Vector3( move.x,move.y,move.z ); // save last move in case the player moved
-			
-			// fade out movement tutorial
-			if(!tutMoveDone)
+		if(moved != Direction.None)			
+		{		
+			switch(moved)//rotation
 			{
-				gui.fadeOutGuiElement(Tutorials.move);
-				tutMoveDone=true;
-			}
+				case Direction.North: gameObject.transform.eulerAngles = new Vector3(0.0f,0.0f,0.0f);
+					break;
+				case Direction.East: gameObject.transform.eulerAngles = new Vector3(0.0f,90.0f,0.0f);
+					break;
+				case Direction.South: gameObject.transform.eulerAngles = new Vector3(0.0f,180.0f,0.0f);
+					break;
+				case Direction.West: gameObject.transform.eulerAngles = new Vector3(0.0f,270.0f,0.0f);
+					break;
+				case Direction.NorthEast: gameObject.transform.eulerAngles = new Vector3(0.0f,45.0f,0.0f);
+					break;
+				case Direction.NorthWest: gameObject.transform.eulerAngles = new Vector3(0.0f,315.0f,0.0f);
+					break;
+				case Direction.SouthEast: gameObject.transform.eulerAngles = new Vector3(0.0f,135.0f,0.0f);
+					break;
+				case Direction.SouthWest: gameObject.transform.eulerAngles = new Vector3(0.0f,225.0f,0.0f);
+					break;
+			}		
+			lastDir = moved;
+			gameObject.transform.Translate(new Vector3(0.1f,0.0f,0.0f)*Time.deltaTime*speed); //move forward a step
+			lastMove = 0.1f;
 		}
-		else if(lastMove.magnitude > THRESH_FOR_INERTIA) // inertia
+		else if(lastMove > THRESH_FOR_INERTIA) // inertia
 		{
-			gameObject.transform.Translate(lastMove*Time.deltaTime*speed);
-			//simply reduce inertia quadratic
-			lastMove =  new Vector3( lastMove.x* inertiaMultiplier,lastMove.y* inertiaMultiplier,lastMove.z* inertiaMultiplier ); 					
-			moved = true;
+			gameObject.transform.Translate(new Vector3(lastMove,0.0f,0.0f)*Time.deltaTime*speed);
+			//linear reduction of inertia
+			lastMove *= inertiaMultiplier;
+			moved = lastDir;
 		}
 		
 		//set the players Y pos depending on the terrain
 		// only if he was moved by player or inertia
-		if( moved ) 
+		if( moved != Direction.None) 
 		{
 			setPlayersYPosition();
 		}
@@ -329,7 +330,7 @@ public class PlayerController : MonoBehaviour {
 		}
 		float diff = newYPos-gameObject.transform.position.y;
 		if (Mathf.Abs(diff) > 0.0001f)
-			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y,0.0f));
+			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.1f,0.0f));
 	
 	}
 
@@ -383,10 +384,7 @@ public class PlayerController : MonoBehaviour {
 			
 			// update tile, pass the direction along
 			groundTile.GetComponent<GroundGen>().showNextTile(dir);
-			//
-			//
-			//
-			//
+			
 			//groundTile.GetComponent<GroundGen>().
 			setPlayersYPosition();
 		}
