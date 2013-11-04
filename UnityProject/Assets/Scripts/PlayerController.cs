@@ -278,6 +278,11 @@ public class PlayerController : MonoBehaviour {
 		// apply the movement-vector to the player if he moved
 		if(moved != Direction.None)			
 		{		
+			if(!tutMoveDone)//hide tutorial
+			{
+				gui.fadeOutGuiElement(Tutorials.move);
+				tutMoveDone=true;
+			}
 			switch(moved)//rotation
 			{
 				case Direction.North: gameObject.transform.eulerAngles = new Vector3(0.0f,0.0f,0.0f);
