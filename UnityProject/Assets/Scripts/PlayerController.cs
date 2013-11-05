@@ -29,7 +29,6 @@ public class PlayerController : MonoBehaviour {
 	//privates
 	private GameObject groundTile;
 	private bool isSitting=false;
-	private bool isInteracting=false;
 	private int movementMode = -1;
 	// interactive stuff
 	private float progress=0.0f;
@@ -37,6 +36,8 @@ public class PlayerController : MonoBehaviour {
 	private bool interact = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
+	private float totalSittingTime = 0.0f;
+	private uint nearInteractionCounter = 0;
 	//Inertia
     private Direction lastDir = Direction.None;
 	private float start = 0.0f;
@@ -64,7 +65,9 @@ public class PlayerController : MonoBehaviour {
 
         PickUpObject(CarryObject.Nothing);
 		sittingPlayerMesh = transform.FindChild("player_sitting").gameObject;
+		sittingPlayerMesh.SetActive(false);
 		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
+		standingPlayerMesh.SetActive(true);
 				
 	}	
 
@@ -143,6 +146,8 @@ public class PlayerController : MonoBehaviour {
 		{			
 			Movement(v,h);
 		}	
+		else
+			totalSittingTime += Time.deltaTime; // count seconds spend sitting;
 	}
 	
     public void PickUpObject(CarryObject pickedObject)
@@ -210,13 +215,13 @@ public class PlayerController : MonoBehaviour {
 
     private void checkProgress()
     {
+		progress = Mathf.Min(1.0f, (totalSittingTime * (float)(nearInteractionCounter))/5000.0f);
         rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION;
-        /*if (progress < 0.11f)
-        {
-            progress += 0.00002f;
-            inertiaMultiplier = 0.95f - (progress);
-            speed = 65.0f - (progress*100.0f);
-        }/**/
+		/*
+		speed = Mathf.Max(45.0f, 55.0f - (progress*30.0f));
+		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f);
+		distance = Mathf.Max(0.0f, 0.1f - progress);
+		*/
     }
 
     private void Movement(float v, float h)
@@ -309,7 +314,7 @@ public class PlayerController : MonoBehaviour {
 			gameObject.transform.Translate(new Vector3(0.1f,0.0f,0.0f)*Time.deltaTime*speed); //move forward a step			
 			elapsedTime = 0.0f;
 		}
-		else if(elapsedTime <= duration) // inertia
+		else if(elapsedTime <= duration && progress < THRESH_FOR_NO_COLLISION) // inertia
 		{
 			Interpolate.Function test = Interpolate.Ease(Interpolate.EaseType.EaseOutSine);
 			float incVal = test(start, distance,elapsedTime, duration);
@@ -340,7 +345,7 @@ public class PlayerController : MonoBehaviour {
 		}
 		float diff = newYPos-gameObject.transform.position.y;
 		if (Mathf.Abs(diff) > 0.0001f)
-			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.1f,0.0f));
+			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.3f,0.0f));
 	
 	}
 
@@ -402,6 +407,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
 			inRangeElements.Add(addThis);
+			nearInteractionCounter++;
 		}
 	}
 
