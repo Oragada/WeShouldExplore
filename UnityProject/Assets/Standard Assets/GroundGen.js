@@ -31,6 +31,7 @@ var zOff = 0;
 
 var tileChangeFlag = 0;
 
+var flower : GameObject;
 
 
 function Start() {
@@ -192,11 +193,12 @@ function ChangeTerrain() {
 
 function Scatter(ground) {
 	
-	var index = 0;
-	arraySize = ground.vertices.Length;
 	
-	// NOTHING TO SEE HERE, MOVE ALONG
-
+	for (var i=0;i<30;i++) {
+		var currentFlower = Instantiate (flower, Vector3(Random.Range(1,18),0, Random.Range(1,18)), Quaternion.identity);
+		currentFlower.transform.position.y = returnPlayerPos(currentFlower.transform.position.x,currentFlower.transform.position.z)+1.2;
+		//Debug.Log(currentFlower.transform.position.y);
+	}
 
 
 }
