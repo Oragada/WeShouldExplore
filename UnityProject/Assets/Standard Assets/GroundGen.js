@@ -61,7 +61,7 @@ function GenerateGround() {
 	gameObject.AddComponent(MeshFilter);
 	gameObject.AddComponent(MeshRenderer);
 	
-	renderer.material.color = Color.white;
+	renderer.material.color = Color(0.3, 0.7, 0.1);
 	
 	ground = GetComponent(MeshFilter).mesh;
 	
@@ -120,6 +120,8 @@ function GenerateGround() {
 	transform.localScale.z = 20/(height*1.0);
 	transform.localScale.y = transform.localScale.x;
 	
+	
+	
 
 }
 
@@ -128,7 +130,7 @@ function returnPlayerPos(x,z) {
 
 	//return fractal.HybridMultifractal(x*frequency,z*frequency,0)*scale+0.5;
 	
-	return returnGroundY(x,z)+0.5;
+	return returnGroundY(x,z)+0.2;
 
 
 
@@ -184,4 +186,17 @@ function ChangeTerrain() {
 	ground.RecalculateNormals();
 	
 	gameObject.AddComponent(MeshCollider);
+	
+	Scatter(ground);
+}
+
+function Scatter(ground) {
+	
+	var index = 0;
+	arraySize = ground.vertices.Length;
+	
+	// NOTHING TO SEE HERE, MOVE ALONG
+
+
+
 }
