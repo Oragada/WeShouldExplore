@@ -31,7 +31,7 @@ public class PlayerController : MonoBehaviour {
 	private GameObject groundTile;
 	private bool isSitting=false;
 	private bool isInteracting=false;
-	private int movementMode = -1;
+	private int movementMode = 0;
 	// interactive stuff
 	private float progress=0.0f;
 	private bool sit = false;
@@ -392,6 +392,17 @@ public class PlayerController : MonoBehaviour {
 		{
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
 			inRangeElements.Add(addThis);
+
+            
+
+            foreach (RabbitGroupBehavior rabbit in inRangeElements.OfType<RabbitGroupBehavior>())
+            {
+                Vector3 toCenterVec = (rabbit.transform.position - transform.position);
+                toCenterVec.y *= 0;
+                toCenterVec.Normalize();
+                rabbit.runDirection = Mathf.Acos(toCenterVec[2])*(180/Mathf.PI);
+                rabbit.activate(progress);
+            }
 		}
 	}
 
@@ -428,9 +439,9 @@ public class PlayerController : MonoBehaviour {
 
             //in range elements count
             GUI.Label(new Rect(x, y + 160, 100, 20), "Debug:");
-            //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
+            GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
             //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements[1].ToString());
-            GUI.Label(new Rect(x, y + 180, 100, 20), Obj.ToString());
+            //GUI.Label(new Rect(x, y + 180, 100, 20), Obj.ToString());
 
             if (test > 1.5f)
                 movementMode = 2;
