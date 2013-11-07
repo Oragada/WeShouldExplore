@@ -31,6 +31,7 @@ var zOff = 0;
 
 var tileChangeFlag = 0;
 
+var flower : GameObject;
 
 
 function Start() {
@@ -61,7 +62,7 @@ function GenerateGround() {
 	gameObject.AddComponent(MeshFilter);
 	gameObject.AddComponent(MeshRenderer);
 	
-	renderer.material.color = Color.white;
+	renderer.material.color = Color(0.3, 0.7, 0.1);
 	
 	ground = GetComponent(MeshFilter).mesh;
 	
@@ -120,6 +121,8 @@ function GenerateGround() {
 	transform.localScale.z = 20/(height*1.0);
 	transform.localScale.y = transform.localScale.x;
 	
+	
+	
 
 }
 
@@ -128,7 +131,7 @@ function returnPlayerPos(x,z) {
 
 	//return fractal.HybridMultifractal(x*frequency,z*frequency,0)*scale+0.5;
 	
-	return returnGroundY(x,z)+0.5;
+	return returnGroundY(x,z)+0.2;
 
 
 
@@ -184,4 +187,18 @@ function ChangeTerrain() {
 	ground.RecalculateNormals();
 	
 	gameObject.AddComponent(MeshCollider);
+	
+	Scatter(ground);
+}
+
+function Scatter(ground) {
+	
+	
+	for (var i=0;i<30;i++) {
+		var currentFlower = Instantiate (flower, Vector3(Random.Range(1,18),0, Random.Range(1,18)), Quaternion.identity);
+		currentFlower.transform.position.y = returnPlayerPos(currentFlower.transform.position.x,currentFlower.transform.position.z)+1.2;
+		//Debug.Log(currentFlower.transform.position.y);
+	}
+
+
 }
