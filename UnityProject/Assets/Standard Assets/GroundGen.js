@@ -23,6 +23,7 @@ var tileChangeFlag = 0;
 var flower : GameObject;
 var bush : GameObject;
 var pebble : GameObject;
+var rabbits : GameObject;
 
 var currentScat = new Array();
 var lastScat = new Array();
@@ -196,6 +197,8 @@ function ChangeTerrain() {
 	currentScat = Scatter(flower, -0.2, 30);
 	
 	currentScat= currentScat.concat( Scatter(bush, -0.1, 10));
+
+    currentScat = currentScat.concat(Scatter(rabbits, 0, 1));
 	
 	
 	//GENERATE DEPTH - Does not work yet

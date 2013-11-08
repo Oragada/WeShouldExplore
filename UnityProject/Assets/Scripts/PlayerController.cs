@@ -403,6 +403,15 @@ public class PlayerController : MonoBehaviour {
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
 			inRangeElements.Add(addThis);
 			nearInteractionCounter++;
+
+            foreach (RabbitGroupBehavior rabbit in inRangeElements.OfType<RabbitGroupBehavior>())
+            {
+                Vector3 toCenterVec = (rabbit.transform.position - transform.position);
+                toCenterVec.y *= 0;
+                toCenterVec.Normalize();
+                rabbit.runDirection = Mathf.Acos(toCenterVec[2]) * (180 / Mathf.PI);
+                rabbit.activate(progress);
+            }
 		}
 	}
 
