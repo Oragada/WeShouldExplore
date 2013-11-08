@@ -17,21 +17,18 @@ public class PlayerController : MonoBehaviour {
 	//publics
 	public float speed;
 	public ActiveTile actTile;
+	public Material playerMat;
 	//public GroundGen groundGen;
 	
 	// gui elements
 	public TutorialGui gui;
-	// gui bools
-	private bool tutMoveDone=false;
-	private bool tutSitDone=false;
-	private bool tutInteractDone=false;
-	
+
 	//privates
 	private GameObject groundTile;
 	private bool isSitting=false;
-	private int movementMode = 0;
+	private int movementMode = -1;
 	// interactive stuff
-	private float progress=0.0f;
+	private float progress=0.11f;
 	private bool sit = false;
 	private bool interact = false;
     private List<InteractBehaviour> inRangeElements;
@@ -47,6 +44,7 @@ public class PlayerController : MonoBehaviour {
 	// Meshes
 	private GameObject sittingPlayerMesh;
 	private GameObject standingPlayerMesh;
+	private GameObject collisionFucker;
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
@@ -68,7 +66,7 @@ public class PlayerController : MonoBehaviour {
 		sittingPlayerMesh.SetActive(false);
 		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
 		standingPlayerMesh.SetActive(true);
-				
+		collisionFucker = transform.FindChild("CollisionFuck").gameObject;
 	}	
 
 	
@@ -89,10 +87,9 @@ public class PlayerController : MonoBehaviour {
 			if(!isSitting) 
 			{
 				// hide how to sit in the gui
-				if(!tutSitDone)
+				if(!gui.isSitDone())
 				{
 					gui.fadeOutGuiElement(Tutorials.sit);
-					tutSitDone=true;
 				}		
 				//sit down
 				sittingPlayerMesh.SetActive(true);
@@ -116,10 +113,9 @@ public class PlayerController : MonoBehaviour {
 		
 		if( interact )
         {
-			if(!tutInteractDone)
+			if(!gui.isInteractDone())
 			{
 				gui.fadeOutGuiElement(Tutorials.interact);
-				tutInteractDone=true;
 			}
 			if( inRangeElements.Count > 0)
 			{
@@ -215,13 +211,14 @@ public class PlayerController : MonoBehaviour {
 
     private void checkProgress()
     {
+		// compute new progress value:
 		progress = Mathf.Min(1.0f, (totalSittingTime * (float)(nearInteractionCounter))/5000.0f);
-        rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION;
-		/*
-		speed = Mathf.Max(45.0f, 55.0f - (progress*30.0f));
-		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f);
-		distance = Mathf.Max(0.0f, 0.1f - progress);
-		*/
+		// set attributes accordingly
+		playerMat.color = new Color(playerMat.color.r,playerMat.color.g,playerMat.color.b, Mathf.Min(1.0f, 0.7f+progress)); // transparency
+		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
+		//speed = Mathf.Max(30.0f, 55.0f - (progress*30.0f)); // reduced speed
+		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding
+		distance = Mathf.Max(0.0f, 0.1f - progress);		// reduced sliding
     }
 
     private void Movement(float v, float h)
@@ -286,10 +283,9 @@ public class PlayerController : MonoBehaviour {
 		// apply the movement-vector to the player if he moved
 		if(moved != Direction.None)			
 		{		
-			if(!tutMoveDone)//hide tutorial
+			if(!gui.isMoveDone())//hide tutorial
 			{
-				gui.fadeOutGuiElement(Tutorials.move);
-				tutMoveDone=true;
+				gui.fadeOutGuiElement(Tutorials.move);				
 			}
 			switch(moved)//rotation
 			{
@@ -345,11 +341,10 @@ public class PlayerController : MonoBehaviour {
 		}
 		float diff = newYPos-gameObject.transform.position.y;
 		if (Mathf.Abs(diff) > 0.0001f)
-			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.3f,0.0f));
+			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
 	}
-
-    void OnTriggerEnter (Collider other)
+    public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
 		{
@@ -408,20 +403,10 @@ public class PlayerController : MonoBehaviour {
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
 			inRangeElements.Add(addThis);
 			nearInteractionCounter++;
-            
-
-            foreach (RabbitGroupBehavior rabbit in inRangeElements.OfType<RabbitGroupBehavior>())
-            {
-                Vector3 toCenterVec = (rabbit.transform.position - transform.position);
-                toCenterVec.y *= 0;
-                toCenterVec.Normalize();
-                rabbit.runDirection = Mathf.Acos(toCenterVec[2])*(180/Mathf.PI);
-                rabbit.activate(progress);
-            }
 		}
 	}
 
-	void OnTriggerExit(Collider other)
+	public void channeledTriggerExit(Collider other)
 	{
 		if( other.gameObject.tag == "Interactable")
 		{
@@ -458,7 +443,7 @@ public class PlayerController : MonoBehaviour {
 
             //in range elements count
             GUI.Label(new Rect(x, y + 220, 100, 20), "Debug:");
-            GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
+            //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
             //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements[1].ToString());
             GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
 

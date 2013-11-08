@@ -2,16 +2,9 @@
 
 var ground : Mesh;
 var groundCol : MeshCollider;
+var frictionMap: PhysicMaterial;
 var width : int;
 var height : int;
-
-var move = 0; // move offset
-
-//Noises
-//var perlin;
-//var fractal;
-//perlin = new Perlin();
-//fractal = new FractalNoise(2,1,1, perlin);
 
 //Noise properties
 @Range (0.0, 1.0)
@@ -20,18 +13,20 @@ var frequency = 0.2; //Noise frequency
 @Range (-1.0, 10.0)
 var scale = 1.0; //Noise scale
 
-@Range (0, 19)
+//Tile Offsets
 var xOff = 0;
-
-@Range (0, 19)
 var yOff = 0;
-
-@Range (0, 19)
 var zOff = 0;
 
 var tileChangeFlag = 0;
 
 var flower : GameObject;
+var bush : GameObject;
+var pebble : GameObject;
+
+var currentScat = new Array();
+var lastScat = new Array();
+
 
 
 function Start() {
@@ -43,12 +38,12 @@ function Start() {
 
 function Update() {
 
-	if(tileChangeFlag==1) {
+	/*This is in the update function because the previous tile collider gets destroyed
+	no sooner than the next update. In other words: right about now */
 	
-	ChangeTerrain();
-	
-	tileChangeFlag=0;
-	
+	if(tileChangeFlag==1) {	
+		ChangeTerrain();
+		tileChangeFlag=0;
 	}
 
 }
@@ -87,8 +82,6 @@ function GenerateGround() {
 	for(var yt=0;yt<height-1;yt++) {
 		for(var xt=0;xt<width-1;xt++) {
 		
-			
-			
 			triangles[i++] = ((yt + 1) * width) + xt;
 			triangles[i++] = (yt * width) + xt+1;
 			triangles[i++] = (yt * width) + xt;
@@ -102,8 +95,7 @@ function GenerateGround() {
 	
 	//Generates uvs
 	for(var u=0; u < uvs.Length; u++) {
-		
-		//uvs[u] = Vector2(vertices[u].x/(height-1), vertices[u].z/(width-1));
+
 		uvs[u] = Vector2(vertices[u].x, vertices[u].z);
 	
 	}
@@ -129,12 +121,8 @@ function GenerateGround() {
 
 function returnPlayerPos(x,z) {
 
-	//return fractal.HybridMultifractal(x*frequency,z*frequency,0)*scale+0.5;
-	
 	return returnGroundY(x,z)+0.2;
-
-
-
+	
 }
 
 function returnGroundY(x,z) {
@@ -145,6 +133,8 @@ function returnGroundY(x,z) {
 
 
 function showNextTile(dir) {
+
+	
 	
 	switch(dir) {
 		case 0: //North
@@ -169,6 +159,17 @@ function showNextTile(dir) {
 
 function ChangeTerrain() {
 
+	//Clear currectScat for the new tile
+	if (currentScat.length>0) {
+
+		for(var k=0;k<currentScat.length;k++) {
+			var toKill = currentScat[k];
+			//currentScat.RemoveAt(k);
+			Destroy(toKill);
+		}
+	}
+
+	//transfer height map data on mesh
 	ground = GetComponent(MeshFilter).mesh;
 	
 	var vertices = ground.vertices;
@@ -176,8 +177,7 @@ function ChangeTerrain() {
 	var index = 0;
 	
 	for(var i=0;i<width;i++) {
-		for(var j=0;j<height;j++) {
-			
+		for(var j=0;j<height;j++) {	
 			vertices[index].y = returnGroundY(j,i);		
 			index++;
 		}
@@ -186,19 +186,36 @@ function ChangeTerrain() {
 	ground.vertices = vertices;
 	ground.RecalculateNormals();
 	
+	//Generate collision mesh for new tile
 	gameObject.AddComponent(MeshCollider);
+	GetComponent(MeshCollider).material = frictionMap; 
+	GetComponent(MeshCollider).smoothSphereCollisions = true; 
 	
-	Scatter(ground);
+	//Do some scattering
+	lastScat = currentScat;
+	currentScat = Scatter(flower, -0.2, 30);
+	
+	currentScat= currentScat.concat( Scatter(bush, -0.1, 10));
+	
+	
+	//GENERATE DEPTH - Does not work yet
+	//var depthGen: DepthGen = GetComponent(DepthGen); ; 
+	//Debug.Log(depthGen);
+
 }
 
-function Scatter(ground) {
+function Scatter(prefab, offset, quantity) {
+
+	var scat = new Array();
 	
-	
-	for (var i=0;i<30;i++) {
-		var currentFlower = Instantiate (flower, Vector3(Random.Range(1,18),0, Random.Range(1,18)), Quaternion.identity);
-		currentFlower.transform.position.y = returnPlayerPos(currentFlower.transform.position.x,currentFlower.transform.position.z)+1.2;
-		//Debug.Log(currentFlower.transform.position.y);
+	for (var i=0;i<quantity;i++) {
+		scat[i] = Instantiate (prefab, Vector3(Random.Range(1,18),0, Random.Range(1,18)), Quaternion.identity);
+		scat[i].transform.position.y = returnPlayerPos(scat[i].transform.position.x,scat[i].transform.position.z)+offset;
+		
+		//Rotate randomly around x-axis
+		scat[i].transform.eulerAngles.y = Random.Range(0, 360);
 	}
-
-
+	return scat;
 }
+
+
