@@ -33,8 +33,8 @@ public class PlayerController : MonoBehaviour {
 	private bool interact = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
-	private float totalSittingTime = 0.0f;
-	private uint nearInteractionCounter = 0;
+	private float totalSittingTime = 00.0f; //100.0f for testing
+	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
 	private float start = 0.0f;
@@ -44,7 +44,12 @@ public class PlayerController : MonoBehaviour {
 	// Meshes
 	private GameObject sittingPlayerMesh;
 	private GameObject standingPlayerMesh;
+	private GameObject deadPlayerMesh;
 	private GameObject collisionFucker;
+	//Sounds
+	private AudioSource sittingSound;
+	private AudioSource dyingSound;
+	private float fadingSittingVolume;
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
@@ -60,17 +65,27 @@ public class PlayerController : MonoBehaviour {
         //Obj = CarryObject.Nothing;
 
         carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
-
+		
         PickUpObject(CarryObject.Nothing);
+		// find sounds
+		sittingSound = GameObject.Find("AudioSit").audio;
+		dyingSound = GameObject.Find("AudioDeath").audio;
+		// find meshes		
+		deadPlayerMesh= transform.FindChild("player_dead").gameObject;
+		deadPlayerMesh.SetActive(false);
 		sittingPlayerMesh = transform.FindChild("player_sitting").gameObject;
 		sittingPlayerMesh.SetActive(false);
 		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
-		standingPlayerMesh.SetActive(true);
+		standingPlayerMesh.SetActive(true);		
 		collisionFucker = transform.FindChild("CollisionFuck").gameObject;
 	}	
 
 	
 	void Update () {
+		if (progress >= 1.0f)
+		{
+			return;
+		}
 		// Cache the inputs.
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
@@ -111,6 +126,7 @@ public class PlayerController : MonoBehaviour {
 				standingPlayerMesh.SetActive(true);
 				//change the carrying position when standing up again
 				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,+0.15f,0.0f);
+				StopSittingSound();
 				isSitting = false;
 			}
 		}	
@@ -148,6 +164,7 @@ public class PlayerController : MonoBehaviour {
 		}	
 		else
 			totalSittingTime += Time.deltaTime; // count seconds spend sitting;
+		FadeSounds(Time.deltaTime);
 	}
 	
     public void PickUpObject(CarryObject pickedObject)
@@ -216,13 +233,20 @@ public class PlayerController : MonoBehaviour {
     private void checkProgress()
     {
 		// compute new progress value:
-		progress = Mathf.Min(1.0f, (totalSittingTime * (float)(nearInteractionCounter))/5000.0f);
+		progress = Mathf.Min(1.01f, (Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f);
 		// set attributes accordingly
-		playerMat.color = new Color(playerMat.color.r,playerMat.color.g,playerMat.color.b, Mathf.Min(1.0f, 0.3f+progress)); // transparency
+		float grey = Mathf.Min(1.0f, 1.2f-progress);
+		playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
 		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
-		//speed = Mathf.Max(30.0f, 55.0f - (progress*30.0f)); // reduced speed
+		speed = Mathf.Max(25.0f, 45.0f - (progress*40.0f)); // reduced speed
 		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding
 		distance = Mathf.Max(0.0f, 0.1f - progress);		// reduced sliding
+		
+		// he dies at progress 1.0f
+		if (progress >= 1.0f)
+		{
+			Die();
+		}
     }
 
     private void Movement(float v, float h)
@@ -474,17 +498,39 @@ public class PlayerController : MonoBehaviour {
                 movementMode = 0;
         }
     }
-
+	private void Die()
+	{
+		// change mesh to lying 
+		sittingPlayerMesh.SetActive(false);
+		standingPlayerMesh.SetActive(false);
+		deadPlayerMesh.SetActive(true);
+		// start Death sounds
+		PlayDeathSound();
+	}
+	private void FadeSounds(float timeDelta)
+	{
+		if(sittingSound.audio.isPlaying)
+		{
+			if ( fadingSittingVolume < 1.0f)
+				fadingSittingVolume += timeDelta*0.2f;
+			sittingSound.audio.volume = fadingSittingVolume;			
+		}
+	}
 	private void PlaySittingSound()
 	{
-		foreach ( AudioSource sound in GetComponentsInChildren<AudioSource>())
-		{
-			if ( sound.name == "SittingSound")
-			{
-				if (sound.audio != null && !sound.audio.isPlaying) 
-					sound.audio.Play();				
-			}
-		}		
+		sittingSound.audio.Play();
+		fadingSittingVolume = 0.0f;
+	}
+	private void StopSittingSound()
+	{
+		sittingSound.audio.Stop();
+		fadingSittingVolume = 0.0f;
+		sittingSound.audio.volume = fadingSittingVolume;
+	}
+	private void PlayDeathSound()
+	{
+		StopSittingSound();
+		dyingSound.Play();
 	}
 }
 
