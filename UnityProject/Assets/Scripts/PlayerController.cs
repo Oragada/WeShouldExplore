@@ -26,7 +26,7 @@ public class PlayerController : MonoBehaviour {
 	//privates
 	private GameObject groundTile;
 	private bool isSitting=false;
-	private int movementMode = -1;
+	private int movementMode = 0;
 	// interactive stuff
 	private float progress=0.11f;
 	private bool sit = false;
@@ -344,6 +344,7 @@ public class PlayerController : MonoBehaviour {
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
 	}
+
     public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -359,6 +360,7 @@ public class PlayerController : MonoBehaviour {
 				Vector3 position = gameObject.transform.position;
 				position.z = 1;
 				gameObject.transform.position = position;
+                inRangeElements.Clear();
 				
 			}
 			else if( other.name == "EastTrigger")
@@ -370,6 +372,7 @@ public class PlayerController : MonoBehaviour {
 				Vector3 position = gameObject.transform.position;
 				position.z = 18;
 				gameObject.transform.position = position;
+                inRangeElements.Clear();
 				
 			}
 			else if( other.name == "NorthTrigger")
@@ -381,6 +384,7 @@ public class PlayerController : MonoBehaviour {
 				Vector3 position = gameObject.transform.position;
 				position.x = 1;
 				gameObject.transform.position = position;
+                inRangeElements.Clear();
 			}
 			else if( other.name == "SouthTrigger")
 			{
@@ -390,6 +394,7 @@ public class PlayerController : MonoBehaviour {
 				Vector3 position = gameObject.transform.position;
 				position.x = 18;
 				gameObject.transform.position = position;
+                inRangeElements.Clear();
 			}
 			
 			// update tile, pass the direction along
@@ -404,8 +409,9 @@ public class PlayerController : MonoBehaviour {
 			inRangeElements.Add(addThis);
 			nearInteractionCounter++;
 
-            foreach (RabbitGroupBehavior rabbit in inRangeElements.OfType<RabbitGroupBehavior>())
+            foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
             {
+                var rabbit = rab;
                 Vector3 toCenterVec = (rabbit.transform.position - transform.position);
                 toCenterVec.y *= 0;
                 toCenterVec.Normalize();
@@ -453,8 +459,8 @@ public class PlayerController : MonoBehaviour {
             //in range elements count
             GUI.Label(new Rect(x, y + 220, 100, 20), "Debug:");
             //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
-            //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements[1].ToString());
-            GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
+            GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements.OfType<RabbitGroupBehavior>().Count().ToString(CultureInfo.InvariantCulture));
+            //GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
 
             if (test > 1.5f)
                 movementMode = 2;
