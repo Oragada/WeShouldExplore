@@ -214,7 +214,7 @@ public class PlayerController : MonoBehaviour {
 		// compute new progress value:
 		progress = Mathf.Min(1.0f, (totalSittingTime * (float)(nearInteractionCounter))/5000.0f);
 		// set attributes accordingly
-		playerMat.color = new Color(playerMat.color.r,playerMat.color.g,playerMat.color.b, Mathf.Min(1.0f, 0.7f+progress)); // transparency
+		playerMat.color = new Color(playerMat.color.r,playerMat.color.g,playerMat.color.b, Mathf.Min(1.0f, 0.3f+progress)); // transparency
 		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
 		//speed = Mathf.Max(30.0f, 55.0f - (progress*30.0f)); // reduced speed
 		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding

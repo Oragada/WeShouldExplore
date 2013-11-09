@@ -6,7 +6,7 @@ public class RabbitMovement : MonoBehaviour
 {
     public float RunDirection = 0f;
     public bool Escaping = false;
-    public float Speed = 2f;
+    public float Speed = 1.5f;
 
 	// Use this for initialization
 	void Start () {

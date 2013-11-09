@@ -28,19 +28,6 @@ public class TutorialGui : MonoBehaviour {
 				StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 1.0f));
 				child.GetComponent<Animation>().Play();		
 				
-				GameObject t = transform.FindChild("tut_sit").gameObject;
-				t.SetActive(true);
-				GUITexture nextChild = t.GetComponent<GUITexture>();
-				{
-					nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
-					StartCoroutine(Fade.use.Alpha(nextChild, 0.0f, 1.0f, 3.0f));
-				}
-				tutMoveDone = true;
-			}
-           	else if(child.name == "tut_sit"  && inWhich==Tutorials.sit)
-			{
-				StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 1.0f));
-				child.GetComponent<Animation>().Play();
 				GameObject t = transform.FindChild("tut_interact").gameObject;
 				t.SetActive(true);
 				GUITexture nextChild = t.GetComponent<GUITexture>();
@@ -48,13 +35,26 @@ public class TutorialGui : MonoBehaviour {
 					nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
 					StartCoroutine(Fade.use.Alpha(nextChild, 0.0f, 1.0f, 3.0f));
 				}
-				tutSitDone=true;
-			}
-           	else if(child.name == "tut_interact"  && inWhich==Tutorials.interact)
+				tutMoveDone = true;
+            }
+            else if (child.name == "tut_interact" && inWhich == Tutorials.interact)
+            {
+                StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 3.0f));
+                child.GetComponent<Animation>().Play();
+                GameObject t = transform.FindChild("tut_sit").gameObject;
+                t.SetActive(true);
+                GUITexture nextChild = t.GetComponent<GUITexture>();
+                {
+                    nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+                    StartCoroutine(Fade.use.Alpha(nextChild, 0.0f, 1.0f, 3.0f));
+                }
+                tutInteractDone = true;
+            }
+           	else if(child.name == "tut_sit"  && inWhich==Tutorials.sit)
 			{
-				StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 3.0f));
+				StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 1.0f));
 				child.GetComponent<Animation>().Play();
-				tutInteractDone = true;
+				tutSitDone=true;
 			}
            
         }

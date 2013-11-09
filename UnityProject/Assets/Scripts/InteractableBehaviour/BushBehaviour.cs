@@ -19,9 +19,9 @@ namespace Assets.Scripts.InteractableBehaviour
         }
         public override CarryObject activate(float playerProgress)
         {
-            isActive = !isActive;
+            //isActive = !isActive;
             Component bush = GetGhildComponent("BushObject");
-            bush.renderer.material.color = isActive ? activeColor : inactiveColor;
+            //bush.renderer.material.color = isActive ? activeColor : inactiveColor;
 
             return CarryObject.Leaf;
         }
