@@ -102,6 +102,10 @@ public class PlayerController : MonoBehaviour {
 			}
 			else
 			{
+				if(!gui.isStandingUpDone())
+				{
+					gui.fadeOutGuiElement(Tutorials.standup);
+				}	
 				//stand up again
 				sittingPlayerMesh.SetActive(false);
 				standingPlayerMesh.SetActive(true);
