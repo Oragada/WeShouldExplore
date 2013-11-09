@@ -3,7 +3,6 @@ using System.Collections;
 
 public enum Tutorials {move,sit,standup,interact};
 
-
 public class TutorialGui : MonoBehaviour {
 	// gui bools
 	private bool tutMoveDone=false;
@@ -11,12 +10,15 @@ public class TutorialGui : MonoBehaviour {
 	private bool tutStandUpDone=false;
 	private bool tutInteractDone=false;
 	
+	private const float DELAY_TIME=2.5f;
+	
 	void Awake()
 	{
 		transform.FindChild("tut_sit").gameObject.SetActive(false);
 		transform.FindChild("tut_standup").gameObject.SetActive(false);
 		transform.FindChild("tut_interact").gameObject.SetActive(false);
 		transform.FindChild("tut_movement").gameObject.SetActive(true); // start with movement		
+		
 	}
 	public bool isMoveDone(){return tutMoveDone;}
 	public bool isSitDone(){return tutSitDone;}	
@@ -36,7 +38,7 @@ public class TutorialGui : MonoBehaviour {
 				GUITexture nextChild = t.GetComponent<GUITexture>();
 				{
 					nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
-					StartCoroutine(Fade.use.Alpha(nextChild, 0.0f, 1.0f, 3.0f));
+					StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));					
 				}
 				tutMoveDone = true;
             }
@@ -49,7 +51,7 @@ public class TutorialGui : MonoBehaviour {
                 GUITexture nextChild = t.GetComponent<GUITexture>();
                 {
                     nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
-                    StartCoroutine(Fade.use.Alpha(nextChild, 0.0f, 1.0f, 3.0f));
+                    StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));
                 }
                 tutInteractDone = true;
             }
@@ -62,7 +64,7 @@ public class TutorialGui : MonoBehaviour {
                 GUITexture nextChild = t.GetComponent<GUITexture>();
                 {
                     nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
-                    StartCoroutine(Fade.use.Alpha(nextChild, 0.0f, 1.0f, 3.0f));
+                    StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));
                 }
 				tutSitDone=true;
 			}
@@ -76,5 +78,11 @@ public class TutorialGui : MonoBehaviour {
         }
 		//StartCoroutine(Fade.use.Alpha(tut_movement, 1.0f, 0.0f, 3.0f));
 	}
+	IEnumerator DelayFadeIn(GUITexture fadein, float delay)
+	{		
+		yield return new WaitForSeconds(delay);
+		if( fadein != null)
+			StartCoroutine(Fade.use.Alpha(fadein, 0.0f, 1.0f, 3.0f));		
+    }
 	
 }
