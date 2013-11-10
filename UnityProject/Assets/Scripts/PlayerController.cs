@@ -33,8 +33,8 @@ public class PlayerController : MonoBehaviour {
 	private bool interact = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
-	private float totalSittingTime = 00.0f; //100.0f for testing
-	private uint nearInteractionCounter = 0; // 45 for testing
+	private float totalSittingTime = 100.0f; //100.0f for testing
+	private uint nearInteractionCounter = 20; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
 	private float start = 0.0f;
@@ -45,7 +45,8 @@ public class PlayerController : MonoBehaviour {
 	private GameObject sittingPlayerMesh;
 	private GameObject standingPlayerMesh;
 	private GameObject deadPlayerMesh;
-	private GameObject collisionFucker;
+	private SphereCollider collisionHelper;
+	private List<SphereCollider> collidingObj;
 	//Sounds
 	private AudioSource sittingSound;
 	private AudioSource dyingSound;
@@ -53,7 +54,7 @@ public class PlayerController : MonoBehaviour {
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
-	
+		private Vector3 lastPos;
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
@@ -77,7 +78,9 @@ public class PlayerController : MonoBehaviour {
 		sittingPlayerMesh.SetActive(false);
 		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
 		standingPlayerMesh.SetActive(true);		
-		collisionFucker = transform.FindChild("CollisionFuck").gameObject;
+		// colliding stuffs
+		collisionHelper = transform.FindChild("ObstacleCollider").gameObject.GetComponent<SphereCollider>();
+		collidingObj = new List<SphereCollider>();
 	}	
 
 	
@@ -165,6 +168,7 @@ public class PlayerController : MonoBehaviour {
 		else
 			totalSittingTime += Time.deltaTime; // count seconds spend sitting;
 		FadeSounds(Time.deltaTime);
+		lastPos = gameObject.transform.position;
 	}
 	
     public void PickUpObject(CarryObject pickedObject)
@@ -334,8 +338,9 @@ public class PlayerController : MonoBehaviour {
 				case Direction.SouthWest: gameObject.transform.eulerAngles = new Vector3(0.0f,225.0f,0.0f);
 					break;
 			}		
-			lastDir = moved;
-			gameObject.transform.Translate(new Vector3(0.1f,0.0f,0.0f)*Time.deltaTime*speed); //move forward a step			
+			lastDir = moved;			
+			Vector3 dir = checkForCollisions(moved);
+			gameObject.transform.Translate(dir*Time.deltaTime*speed*0.1f); //move forward a step		
 			elapsedTime = 0.0f;
 		}
 		else if(elapsedTime <= duration && progress < THRESH_FOR_NO_COLLISION) // inertia
@@ -348,6 +353,8 @@ public class PlayerController : MonoBehaviour {
 			moved = lastDir;
 		}
 		
+			
+		collidingObj.Clear();
 		//set the players Y pos depending on the terrain
 		// only if he was moved by player or inertia
 		if( moved != Direction.None) 
@@ -355,7 +362,48 @@ public class PlayerController : MonoBehaviour {
 			setPlayersYPosition();
 		}
 	}
-	
+	private Vector3 checkForCollisions(Direction moved)
+	{
+		
+		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
+		foreach( SphereCollider enemy in collidingObj)
+		{
+			Vector3 dif = collisionHelper.transform.position - enemy.transform.position;
+			dif.y = 0.0f;
+			//dif.Normalize();
+			
+			float totalDif = collisionHelper.radius + enemy.radius;
+			
+			/*Debug.Log ( collisionHelper.transform.position.ToString());
+			Debug.Log ( enemy.transform.position.ToString());
+			Debug.Log ( "---");
+			Debug.Log ( dif.ToString());*/
+			
+			//ret.Set(ret.x - (Mathf.Abs(dif.x)+collisionHelper.radius), ret.y, ret.z);
+			ret.Set((dif.x)/(Time.deltaTime*speed*1.0f), ret.y,(dif.z)/(Time.deltaTime*speed*1.0f));
+			Quaternion quat = new Quaternion();
+			
+			switch(moved)//rotation
+			{				
+				case Direction.East: quat = Quaternion.Euler(0.0f,270.0f,0.0f);
+					break;
+				case Direction.South: quat = Quaternion.Euler(0.0f,180.0f,0.0f);
+					break;
+				case Direction.West: quat = Quaternion.Euler(0.0f,90.0f,0.0f);
+					break;
+				case Direction.NorthEast: quat = Quaternion.Euler(0.0f,315.0f,0.0f);
+					break;
+				case Direction.NorthWest: quat = Quaternion.Euler(0.0f,45.0f,0.0f);
+					break;
+				case Direction.SouthEast: quat = Quaternion.Euler(0.0f,225.0f,0.0f);
+					break;
+				case Direction.SouthWest: quat = Quaternion.Euler(0.0f,135.0f,0.0f);
+					break;
+			}
+			ret = quat * ret;
+		}		
+		return ret;
+	}	
     private void setPlayersYPosition()
 	{
 		float newYPos = gameObject.transform.position.y;
@@ -372,7 +420,19 @@ public class PlayerController : MonoBehaviour {
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
 	}
-
+	public void channeledTriggerStay(Collider other)
+	{
+		if( other.gameObject.tag == "Interactable")
+		{
+			Transform colli = other.transform.FindChild("CollisionCollider");
+			if( colli != null)
+			{
+				
+				SphereCollider enemy = colli.GetComponent<SphereCollider>();
+				collidingObj.Add( colli.GetComponent<SphereCollider>() );
+			}
+		}
+	}
     public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -433,6 +493,14 @@ public class PlayerController : MonoBehaviour {
 		}
 		if( other.gameObject.tag == "Interactable")
 		{
+			Transform colli = other.transform.FindChild("CollisionCollider");
+			if( colli != null)
+			{
+				
+				SphereCollider enemy = colli.GetComponent<SphereCollider>();
+				collidingObj.Add( colli.GetComponent<SphereCollider>() );
+			}
+			
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
 			inRangeElements.Add(addThis);
 			nearInteractionCounter++;
