@@ -35,8 +35,8 @@ public class PlayerController : MonoBehaviour {
 	private bool dead = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
-	private float totalSittingTime = 100.0f; //100.0f for testing
-	private uint nearInteractionCounter = 20; // 45 for testing
+	private float totalSittingTime = 00.0f; //100.0f for testing
+	private uint nearInteractionCounter = 00; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
 	private float start = 0.0f;
@@ -107,10 +107,7 @@ public class PlayerController : MonoBehaviour {
 			if(!isSitting) 
 			{
 				// hide how to sit in the gui
-				if(!gui.isSitDone())
-				{
-					gui.fadeOutGuiElement(Tutorials.sit);
-				}		
+				gui.doneSit();
 				//sit down
 				sittingPlayerMesh.SetActive(true);
 				standingPlayerMesh.SetActive(false);
@@ -122,10 +119,7 @@ public class PlayerController : MonoBehaviour {
 			}
 			else
 			{
-				if(!gui.isStandingUpDone())
-				{
-					gui.fadeOutGuiElement(Tutorials.standup);
-				}	
+				gui.doneStandingUp();
 				//stand up again
 				sittingPlayerMesh.SetActive(false);
 				standingPlayerMesh.SetActive(true);
@@ -138,15 +132,12 @@ public class PlayerController : MonoBehaviour {
 		
 		if( interact )
         {
-			if(!gui.isInteractDone())
-			{
-				gui.fadeOutGuiElement(Tutorials.interact);
-			}
 			InteractBehaviour closest = FindClosestInteractable();
 			if( closest != null) 
 	        {
 				CarryObject co = closest.activate(progress);
                 PickUpObject(co);
+				gui.doneInteract();
 			}	
 		}
 		else
@@ -319,10 +310,7 @@ public class PlayerController : MonoBehaviour {
 		// apply the movement-vector to the player if he moved
 		if(moved != Direction.None)			
 		{		
-			if(!gui.isMoveDone())//hide tutorial
-			{
-				gui.fadeOutGuiElement(Tutorials.move);				
-			}
+			gui.doneMove();
 			switch(moved)//rotation
 			{
 				case Direction.North: gameObject.transform.eulerAngles = new Vector3(0.0f,0.0f,0.0f);
@@ -401,20 +389,7 @@ public class PlayerController : MonoBehaviour {
 		if (Mathf.Abs(diff) > 0.0001f)
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
-	}
-	public void channeledTriggerStay(Collider other)
-	{
-		if( other.gameObject.tag == "Interactable")
-		{
-			Transform colli = other.transform.FindChild("CollisionCollider");
-			if( colli != null)
-			{
-				
-				SphereCollider enemy = colli.GetComponent<SphereCollider>();
-				collidingObj.Add( colli.GetComponent<SphereCollider>() );
-			}
-		}
-	}
+	}	
     public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -469,7 +444,7 @@ public class PlayerController : MonoBehaviour {
 			
 			// update tile, pass the direction along
 			groundTile.GetComponent<GroundGen>().showNextTile(dir);
-			
+			gui.doneFollow();
 			//groundTile.GetComponent<GroundGen>().
 			setPlayersYPosition();
 		}

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public enum Tutorials {move,sit,standup,interact};
+public enum Tutorials {none,move,sit,standup,interact,follow};
 
 public class TutorialGui : MonoBehaviour {
 	// gui bools
@@ -9,76 +9,110 @@ public class TutorialGui : MonoBehaviour {
 	private bool tutSitDone=false;
 	private bool tutStandUpDone=false;
 	private bool tutInteractDone=false;
+	private bool tutFollowDone=false;
 	
 	private const float DELAY_TIME=2.5f;
 	private GameObject credits;
 	
+	private GameObject currObj;
+	private Tutorials currType;
 	void Awake()
 	{
 		transform.FindChild("tut_sit").gameObject.SetActive(false);
 		transform.FindChild("tut_standup").gameObject.SetActive(false);
 		transform.FindChild("tut_interact").gameObject.SetActive(false);
-		transform.FindChild("tut_movement").gameObject.SetActive(true); // start with movement		
-		credits = GameObject.Find("Credits");
+		transform.FindChild("tut_follow").gameObject.SetActive(false);
+		currObj = transform.FindChild("tut_movement").gameObject;
+		currObj.SetActive(true); // start with movement		
+		currType = Tutorials.move;
+		
+		
+		credits = GameObject.Find("GUI").transform.FindChild("Credits").gameObject;
 		credits.SetActive(false);
 	}
-	public bool isMoveDone(){return tutMoveDone;}
-	public bool isSitDone(){return tutSitDone;}	
-	public bool isStandingUpDone(){return tutStandUpDone;}
-	public bool isInteractDone(){return tutInteractDone;}
+	public void doneMove(){ tutMoveDone=true; fadeOut(Tutorials.move);}
+	public void doneSit(){ tutSitDone = true;fadeOut(Tutorials.sit); }
+	public void doneStandingUp(){ tutStandUpDone = true; fadeOut(Tutorials.standup);}
+	public void doneInteract(){ tutInteractDone = true; fadeOut(Tutorials.interact);}
+	public void doneFollow()
+	{ 
+		tutFollowDone = true;
+		GameObject.Find("GUI").transform.FindChild("Arrow").gameObject.SetActive(false); 
+		fadeOut(Tutorials.follow);
+	}
 	
-	public void fadeOutGuiElement(Tutorials inWhich)
-	{	
-		foreach (GUITexture child in GetComponentsInChildren<GUITexture>()) {
-			if(child.name == "tut_movement" && inWhich==Tutorials.move)
+	public void fadeOut(Tutorials inWhich)
+	{
+		if( inWhich == currType)
+		{
+			if ( currObj != null)
 			{
-				StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 1.0f));
-				child.GetComponent<Animation>().Play();		
-				
-				GameObject t = transform.FindChild("tut_interact").gameObject;
-				t.SetActive(true);
-				GUITexture nextChild = t.GetComponent<GUITexture>();
-				{
-					nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
-					StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));					
-				}
-				tutMoveDone = true;
-            }
-            else if (child.name == "tut_interact" && inWhich == Tutorials.interact)
-            {
-                StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 3.0f));
-                child.GetComponent<Animation>().Play();
-                GameObject t = transform.FindChild("tut_sit").gameObject;
-                t.SetActive(true);
-                GUITexture nextChild = t.GetComponent<GUITexture>();
-                {
-                    nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
-                    StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));
-                }
-                tutInteractDone = true;
-            }
-           	else if(child.name == "tut_sit"  && inWhich==Tutorials.sit)
-			{
-				StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 1.0f));
-				child.GetComponent<Animation>().Play();
-				GameObject t = transform.FindChild("tut_standup").gameObject;
-                t.SetActive(true);
-                GUITexture nextChild = t.GetComponent<GUITexture>();
-                {
-                    nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
-                    StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));
-                }
-				tutSitDone=true;
+				StopAllCoroutines();
+				Debug.Log ( currObj.GetComponent<GUITexture>().color.a.ToString());
+				if ( currObj.GetComponent<GUITexture>().color.a > 0.1f)
+					StartCoroutine(Fade.use.Alpha(currObj.GetComponent<GUITexture>(), 1.0f, 0.0f, 1.0f));				
+				currObj.GetComponent<Animation>().Play();		
+				currObj = null;
+				currType = Tutorials.none;
 			}
-			else if(child.name == "tut_standup"  && inWhich==Tutorials.standup)
+			Debug.Log ( "fadeOut "+ inWhich.ToString());
+			showNextTutorial();
+		}
+	}
+	private void showNextTutorial()
+	{
+		if(!tutInteractDone)
+		{
+			
+			Debug.Log ( "tut_interact ");
+			GameObject t = transform.FindChild("tut_interact").gameObject;
+			t.SetActive(true);
+			GUITexture nextChild = t.GetComponent<GUITexture>();
 			{
-				StartCoroutine(Fade.use.Alpha(child, 1.0f, 0.0f, 1.0f));
-				child.GetComponent<Animation>().Play();				
-				tutStandUpDone=true;
+				nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+				StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));		
+				currObj = t;
+				currType = Tutorials.interact;
 			}
-           
-        }
-		//StartCoroutine(Fade.use.Alpha(tut_movement, 1.0f, 0.0f, 3.0f));
+		}
+		else if(!tutSitDone)
+		{
+			Debug.Log ( "tut_sit ");
+			GameObject t = transform.FindChild("tut_sit").gameObject;
+			t.SetActive(true);
+			GUITexture nextChild = t.GetComponent<GUITexture>();
+			{
+				nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+				StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));		
+				currObj = t;
+				currType = Tutorials.sit;
+			}
+		}
+		else if(!tutStandUpDone)
+		{
+			Debug.Log ( "tut_standup ");
+			GameObject t = transform.FindChild("tut_standup").gameObject;
+			t.SetActive(true);
+			GUITexture nextChild = t.GetComponent<GUITexture>();
+			{
+				nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+				StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));		
+				currObj = t;
+				currType = Tutorials.standup;
+			}
+		}
+		else if(!tutFollowDone)
+		{
+			GameObject t = transform.FindChild("tut_follow").gameObject;
+			t.SetActive(true);
+			GUITexture nextChild = t.GetComponent<GUITexture>();
+			{
+				nextChild.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+				StartCoroutine(DelayFadeIn(nextChild,DELAY_TIME));		
+				currObj = t;
+				currType = Tutorials.follow;
+			}
+		}
 	}
 	public void showCredits()
 	{		
