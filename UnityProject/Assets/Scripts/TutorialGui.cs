@@ -11,6 +11,7 @@ public class TutorialGui : MonoBehaviour {
 	private bool tutInteractDone=false;
 	
 	private const float DELAY_TIME=2.5f;
+	private GameObject credits;
 	
 	void Awake()
 	{
@@ -18,7 +19,8 @@ public class TutorialGui : MonoBehaviour {
 		transform.FindChild("tut_standup").gameObject.SetActive(false);
 		transform.FindChild("tut_interact").gameObject.SetActive(false);
 		transform.FindChild("tut_movement").gameObject.SetActive(true); // start with movement		
-		
+		credits = GameObject.Find("Credits");
+		credits.SetActive(false);
 	}
 	public bool isMoveDone(){return tutMoveDone;}
 	public bool isSitDone(){return tutSitDone;}	
@@ -78,6 +80,13 @@ public class TutorialGui : MonoBehaviour {
         }
 		//StartCoroutine(Fade.use.Alpha(tut_movement, 1.0f, 0.0f, 3.0f));
 	}
+	public void showCredits()
+	{		
+		credits.SetActive(true);
+		credits.guiTexture.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+		StartCoroutine(DelayFadeIn(credits.guiTexture,1.0f));
+	}
+	
 	IEnumerator DelayFadeIn(GUITexture fadein, float delay)
 	{		
 		yield return new WaitForSeconds(delay);
