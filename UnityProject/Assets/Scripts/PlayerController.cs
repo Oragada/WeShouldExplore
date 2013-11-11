@@ -26,7 +26,7 @@ public class PlayerController : MonoBehaviour {
 	//privates
 	private GameObject groundTile;
 	private bool isSitting=false;
-	private int movementMode = 0;
+	private int movementMode = -1;
 	// interactive stuff
 	private float progress=0.11f;
 	private bool sit = false;
