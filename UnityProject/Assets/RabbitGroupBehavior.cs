@@ -119,6 +119,6 @@ public class RabbitGroupBehavior : InteractBehaviour
 
     public override string customInteractiveText()
     {
-        return "to interact with the Rabbits";
+        return null;
     }
 }

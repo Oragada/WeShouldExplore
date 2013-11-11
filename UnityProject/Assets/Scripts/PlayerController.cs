@@ -8,7 +8,7 @@ using Assets.Scripts;
 
 //public enum for use in ActiveTile and WorldGeneration as well
 public enum Direction {North,South,East,West,None,NorthEast,NorthWest,SouthEast,SouthWest};
-
+public enum LayerList {Default,b,c,d,e,f,g,h,ignorePebbleCollision,withPebbleCollision};
 public enum CarryObject {Nothing, Flower, Bouquet, Leaf}
 
 public class PlayerController : MonoBehaviour {
@@ -28,12 +28,14 @@ public class PlayerController : MonoBehaviour {
 	private bool isSitting=false;
 	private int movementMode = -1;
 	// interactive stuff
-	private float progress=0.11f;
+	private float progress=0.0f;
 	private bool sit = false;
 	private bool interact = false;
 	private bool dead = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
+	private const float THRESH_FOR_PEBBLE_KICKING = 0.2f;
+	private const float THRESH_FOR_TRUE_INTERACTION_TO_COUNT = 0.1f;
 	private float totalSittingTime = 0.0f; //100.0f for testing
 	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
@@ -83,6 +85,8 @@ public class PlayerController : MonoBehaviour {
 		sittingPlayerMesh.SetActive(false);
 		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
 		standingPlayerMesh.SetActive(true);		
+		// set to no collisions with pebbles (via Layers)		
+		SetLayerRecursively(gameObject,(int)(LayerList.ignorePebbleCollision)); // ignorePebbleCollision
 		// colliding stuffs
         collisionHelper = transform.FindChild("ObstacleCollider").gameObject.GetComponent<SphereCollider>();
 		collidingObj = new List<SphereCollider>();
@@ -140,6 +144,8 @@ public class PlayerController : MonoBehaviour {
 				CarryObject co = closest.activate(progress);
                 PickUpObject(co);
 				gui.doneInteract();
+				if( progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
+					nearInteractionCounter++;
 			}	
 		}
 		else
@@ -162,8 +168,9 @@ public class PlayerController : MonoBehaviour {
 			Movement(v,h);
 		}	
 		else
+		{
 			totalSittingTime += Time.deltaTime; // count seconds spend sitting;
-		
+		}
 		FadeSounds(Time.deltaTime);		
 		DisplayInteractionTooltip();		
 
@@ -246,7 +253,13 @@ public class PlayerController : MonoBehaviour {
 
         newRend.gameObject.SetActive(true);
     }
-
+	public static void SetLayerRecursively(GameObject go, int layerNumber)
+	{
+		foreach (Transform trans in go.GetComponentsInChildren<Transform>(true))
+		{
+			trans.gameObject.layer = layerNumber;
+		}
+	}
     private void checkProgress()
     {
 		// compute new progress value:
@@ -255,9 +268,14 @@ public class PlayerController : MonoBehaviour {
 		float grey = Mathf.Min(1.0f, -0.4f*progress+0.5f);
 		playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
 		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
-		speed = Mathf.Max(25.0f, 45.0f - (progress*40.0f)); // reduced speed
+		speed = Mathf.Max(20.0f, 45.0f - (progress*40.0f)); // reduced speed
 		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding
 		distance = Mathf.Max(0.0f, 0.1f - progress);		// reduced sliding
+		
+		if (progress > THRESH_FOR_PEBBLE_KICKING)
+		{			
+			SetLayerRecursively(gameObject,(int)(LayerList.withPebbleCollision));
+		}
 		
 		//start fading the background to black
 		if (progress > 0.9f)
@@ -496,8 +514,11 @@ public class PlayerController : MonoBehaviour {
             }*/
 
 			inRangeElements.Add(addThis);
-			nearInteractionCounter++;
-
+			
+			if( progress < THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
+			{
+				nearInteractionCounter++;
+			}
 		}
 	}
 	private InteractBehaviour FindClosestInteractable()

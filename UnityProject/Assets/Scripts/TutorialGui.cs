@@ -48,14 +48,12 @@ public class TutorialGui : MonoBehaviour {
 			if ( currObj != null)
 			{
 				StopAllCoroutines();
-				Debug.Log ( currObj.GetComponent<GUITexture>().color.a.ToString());
 				if ( currObj.GetComponent<GUITexture>().color.a > 0.1f)
 					StartCoroutine(Fade.use.Alpha(currObj.GetComponent<GUITexture>(), 1.0f, 0.0f, 1.0f));				
 				currObj.GetComponent<Animation>().Play();		
 				currObj = null;
 				currType = Tutorials.none;
 			}
-			Debug.Log ( "fadeOut "+ inWhich.ToString());
 			showNextTutorial();
 		}
 	}
@@ -63,8 +61,6 @@ public class TutorialGui : MonoBehaviour {
 	{
 		if(!tutInteractDone)
 		{
-			
-			Debug.Log ( "tut_interact ");
 			GameObject t = transform.FindChild("tut_interact").gameObject;
 			t.SetActive(true);
 			GUITexture nextChild = t.GetComponent<GUITexture>();
@@ -77,7 +73,6 @@ public class TutorialGui : MonoBehaviour {
 		}
 		else if(!tutSitDone)
 		{
-			Debug.Log ( "tut_sit ");
 			GameObject t = transform.FindChild("tut_sit").gameObject;
 			t.SetActive(true);
 			GUITexture nextChild = t.GetComponent<GUITexture>();
@@ -90,7 +85,6 @@ public class TutorialGui : MonoBehaviour {
 		}
 		else if(!tutStandUpDone)
 		{
-			Debug.Log ( "tut_standup ");
 			GameObject t = transform.FindChild("tut_standup").gameObject;
 			t.SetActive(true);
 			GUITexture nextChild = t.GetComponent<GUITexture>();
