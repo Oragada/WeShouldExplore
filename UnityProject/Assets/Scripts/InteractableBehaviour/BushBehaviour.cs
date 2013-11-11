@@ -4,15 +4,15 @@ namespace Assets.Scripts.InteractableBehaviour
 {
     public class BushBehaviour : InteractBehaviour {
 
-        private Color inactiveColor;
-        private Color activeColor;
-        private bool isActive;
+        //private Color inactiveColor;
+        //private Color activeColor;
+        //private bool isActive;
 	
         void Awake()
         {
-            inactiveColor = new Color(0.0f, 96.0f/255.0f, 5.0f/255.0f,1.0f);
-            activeColor = new Color(90.0f/255.0f, 122.0f/255.0f, 96.0f/255.0f,1.0f);
-            isActive = false;
+            //inactiveColor = new Color(0.0f, 96.0f/255.0f, 5.0f/255.0f,1.0f);
+            //activeColor = new Color(90.0f/255.0f, 122.0f/255.0f, 96.0f/255.0f,1.0f);
+            //isActive = false;
 			
             SphereCollider trigger = GetComponentInChildren<SphereCollider>();
             trigger.radius = triggerRadius;
@@ -20,10 +20,10 @@ namespace Assets.Scripts.InteractableBehaviour
         public override CarryObject activate(float playerProgress)
         {
             //isActive = !isActive;
-            Component bush = GetGhildComponent("BushObject");
+            //Component bush = GetGhildComponent("BushObject");
             //bush.renderer.material.color = isActive ? activeColor : inactiveColor;
 
-            return CarryObject.Leaf;
+            return CarryObject.Nothing;
         }
 
         public override  string customInteractiveText()

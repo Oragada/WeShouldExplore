@@ -22,7 +22,8 @@ public class PlayerController : MonoBehaviour {
 	
 	// gui elements
 	public TutorialGui gui;
-
+	private GUIText interactionTooltip;
+	
 	//privates
 	private GameObject groundTile;
 	private bool isSitting=false;
@@ -31,10 +32,11 @@ public class PlayerController : MonoBehaviour {
 	private float progress=0.11f;
 	private bool sit = false;
 	private bool interact = false;
+	private bool dead = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
-	private float totalSittingTime = 0.0f;
-	private uint nearInteractionCounter = 0;
+	private float totalSittingTime = 0f; //100.0f for testing
+	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
 	private float start = 0.0f;
@@ -44,11 +46,17 @@ public class PlayerController : MonoBehaviour {
 	// Meshes
 	private GameObject sittingPlayerMesh;
 	private GameObject standingPlayerMesh;
-	private GameObject collisionFucker;
+	private GameObject deadPlayerMesh;
+	public SphereCollider collisionHelper;
+	private List<SphereCollider> collidingObj;
+	//Sounds
+	private AudioSource sittingSound;
+	private AudioSource dyingSound;
+	private float fadingSittingVolume;
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
-	
+
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
@@ -56,21 +64,33 @@ public class PlayerController : MonoBehaviour {
 		inRangeElements = new List<InteractBehaviour>();
 		
 		groundTile = GameObject.Find("GroundTile");
-		
+		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
+		interactionTooltip.text = "";
         //Obj = CarryObject.Nothing;
 
         carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
-
+		
         PickUpObject(CarryObject.Nothing);
+		// find sounds
+		sittingSound = GameObject.Find("AudioSit").audio;
+		dyingSound = GameObject.Find("AudioDeath").audio;
+		// find meshes		
+		deadPlayerMesh= transform.FindChild("player_dead").gameObject;
+		deadPlayerMesh.SetActive(false);
 		sittingPlayerMesh = transform.FindChild("player_sitting").gameObject;
 		sittingPlayerMesh.SetActive(false);
 		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
-		standingPlayerMesh.SetActive(true);
-		collisionFucker = transform.FindChild("CollisionFuck").gameObject;
+		standingPlayerMesh.SetActive(true);		
+		// colliding stuffs
+        collisionHelper = transform.FindChild("ObstacleCollider").gameObject.GetComponent<SphereCollider>();
+		collidingObj = new List<SphereCollider>();
 	}	
 
 	
 	void Update () {
+		if (dead)
+			return;
+		
 		// Cache the inputs.
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
@@ -87,10 +107,7 @@ public class PlayerController : MonoBehaviour {
 			if(!isSitting) 
 			{
 				// hide how to sit in the gui
-				if(!gui.isSitDone())
-				{
-					gui.fadeOutGuiElement(Tutorials.sit);
-				}		
+				gui.doneSit();
 				//sit down
 				sittingPlayerMesh.SetActive(true);
 				standingPlayerMesh.SetActive(false);
@@ -102,30 +119,26 @@ public class PlayerController : MonoBehaviour {
 			}
 			else
 			{
-				if(!gui.isStandingUpDone())
-				{
-					gui.fadeOutGuiElement(Tutorials.standup);
-				}	
+				gui.doneStandingUp();
 				//stand up again
 				sittingPlayerMesh.SetActive(false);
 				standingPlayerMesh.SetActive(true);
 				//change the carrying position when standing up again
 				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,+0.15f,0.0f);
+				StopSittingSound();
 				isSitting = false;
 			}
 		}	
 		
 		if( interact )
         {
-			if(!gui.isInteractDone())
-			{
-				gui.fadeOutGuiElement(Tutorials.interact);
-			}
-			if( inRangeElements.Count > 0)
-			{
-				CarryObject co = inRangeElements[0].activate(progress);
+			InteractBehaviour closest = FindClosestInteractable();
+			if( closest != null) 
+	        {
+				CarryObject co = closest.activate(progress);
                 PickUpObject(co);
-			}
+				gui.doneInteract();
+			}	
 		}
 		else
 		{ 
@@ -148,8 +161,26 @@ public class PlayerController : MonoBehaviour {
 		}	
 		else
 			totalSittingTime += Time.deltaTime; // count seconds spend sitting;
+		
+		FadeSounds(Time.deltaTime);		
+		DisplayInteractionTooltip();		
+
+	    BunnyCheck();
 	}
-	
+
+    private void BunnyCheck()
+    {
+        foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
+        {
+            var rabbit = rab;
+            Vector3 toRabVec = (rabbit.transform.position - transform.position);
+            toRabVec.y *= 0;
+            toRabVec.Normalize();
+            rabbit.RunDirection = toRabVec;
+            rabbit.activate(progress);
+        }
+    }
+
     public void PickUpObject(CarryObject pickedObject)
     {
         //Check combination
@@ -167,8 +198,9 @@ public class PlayerController : MonoBehaviour {
         switch (Obj)
         {
             case CarryObject.Nothing:
-            case CarryObject.Leaf:
-                return newObject;
+            //case CarryObject.Leaf:
+                return Obj;
+                //return newObject;
             case CarryObject.Bouquet:
             case CarryObject.Flower:
                 switch (newObject)
@@ -176,7 +208,7 @@ public class PlayerController : MonoBehaviour {
                     case CarryObject.Flower:
                         return CarryObject.Bouquet;
                     default:
-                        return newObject;
+                        return Obj;
                 }
             default:
                 return CarryObject.Nothing;
@@ -216,13 +248,20 @@ public class PlayerController : MonoBehaviour {
     private void checkProgress()
     {
 		// compute new progress value:
-		progress = Mathf.Min(1.0f, (totalSittingTime * (float)(nearInteractionCounter))/5000.0f);
+		progress = Mathf.Min(1.01f, (Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f);
 		// set attributes accordingly
-		playerMat.color = new Color(playerMat.color.r,playerMat.color.g,playerMat.color.b, Mathf.Min(1.0f, 0.3f+progress)); // transparency
+		float grey = Mathf.Min(1.0f, 1.2f-progress);
+		playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
 		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
-		//speed = Mathf.Max(30.0f, 55.0f - (progress*30.0f)); // reduced speed
+		speed = Mathf.Max(25.0f, 45.0f - (progress*40.0f)); // reduced speed
 		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding
 		distance = Mathf.Max(0.0f, 0.1f - progress);		// reduced sliding
+		
+		// he dies at progress 1.0f
+		if (progress > 1.0f)
+		{
+			Die();
+		}
     }
 
     private void Movement(float v, float h)
@@ -287,10 +326,7 @@ public class PlayerController : MonoBehaviour {
 		// apply the movement-vector to the player if he moved
 		if(moved != Direction.None)			
 		{		
-			if(!gui.isMoveDone())//hide tutorial
-			{
-				gui.fadeOutGuiElement(Tutorials.move);				
-			}
+			gui.doneMove();
 			switch(moved)//rotation
 			{
 				case Direction.North: gameObject.transform.eulerAngles = new Vector3(0.0f,0.0f,0.0f);
@@ -310,8 +346,9 @@ public class PlayerController : MonoBehaviour {
 				case Direction.SouthWest: gameObject.transform.eulerAngles = new Vector3(0.0f,225.0f,0.0f);
 					break;
 			}		
-			lastDir = moved;
-			gameObject.transform.Translate(new Vector3(0.1f,0.0f,0.0f)*Time.deltaTime*speed); //move forward a step			
+			lastDir = moved;			
+			Vector3 dir = checkForCollisions(moved);
+			gameObject.transform.Translate(dir*Time.deltaTime*speed*0.1f); //move forward a step		
 			elapsedTime = 0.0f;
 		}
 		else if(elapsedTime <= duration && progress < THRESH_FOR_NO_COLLISION) // inertia
@@ -324,6 +361,8 @@ public class PlayerController : MonoBehaviour {
 			moved = lastDir;
 		}
 		
+			
+		collidingObj.Clear();
 		//set the players Y pos depending on the terrain
 		// only if he was moved by player or inertia
 		if( moved != Direction.None) 
@@ -331,7 +370,27 @@ public class PlayerController : MonoBehaviour {
 			setPlayersYPosition();
 		}
 	}
-	
+
+	private Vector3 checkForCollisions(Direction moved)
+	{
+		
+		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
+		foreach( SphereCollider enemy in collidingObj)
+		{
+			//compute collision-vector between this-SphereCollider and the other-SphereCollider
+			Vector3 dif = collisionHelper.transform.position - enemy.transform.position;
+			// ignore Y-difference
+			dif.y = 0.0f;
+			// convert the collision-vector to local space, because player rotates in the movementfunction
+			dif = transform.InverseTransformDirection(dif);	
+    		// offset the player frame & speed independent 
+			// *0.7f makes sure that diagonal movement should be save ( 1 / sqrt(2) )
+			ret.Set((dif.x)/(Time.deltaTime*speed*0.7f), ret.y,(dif.z)/(Time.deltaTime*speed*0.7f));
+			//test 
+			//ret.Set(ret.x - (Mathf.Abs(dif.x)+collisionHelper.radius), ret.y, ret.z);
+		}				
+		return ret;
+	}	
     private void setPlayersYPosition()
 	{
 		float newYPos = gameObject.transform.position.y;
@@ -347,8 +406,7 @@ public class PlayerController : MonoBehaviour {
 		if (Mathf.Abs(diff) > 0.0001f)
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
-	}
-
+	}	
     public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -403,41 +461,86 @@ public class PlayerController : MonoBehaviour {
 			
 			// update tile, pass the direction along
 			groundTile.GetComponent<GroundGen>().showNextTile(dir);
-			
+			gui.doneFollow();
 			//groundTile.GetComponent<GroundGen>().
 			setPlayersYPosition();
 		}
 		if( other.gameObject.tag == "Interactable")
 		{
+			Transform colli = other.transform.FindChild("CollisionCollider");
+			if( colli != null)
+			{
+				
+				SphereCollider enemy = colli.GetComponent<SphereCollider>();
+				collidingObj.Add( colli.GetComponent<SphereCollider>() );
+			}
+			
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
+
+            /*if (addThis.GetType() == typeof (RabbitGroupBehavior))
+            {
+                RabbitGroupBehavior rabbit = (RabbitGroupBehavior) addThis;
+                Vector3 toRabVec = (rabbit.transform.position - transform.position);
+                toRabVec.y *= 0;
+                toRabVec.Normalize();
+                rabbit.runDirection = toRabVec;
+                rabbit.activate(progress);
+            }*/
+
 			inRangeElements.Add(addThis);
 			nearInteractionCounter++;
 
-            foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
-            {
-                var rabbit = rab;
-                Vector3 toCenterVec = (rabbit.transform.position - transform.position);
-                toCenterVec.y *= 0;
-                toCenterVec.Normalize();
-                rabbit.runDirection = Mathf.Acos(toCenterVec[2]) * (180 / Mathf.PI);
-                rabbit.activate(progress);
-            }
 		}
 	}
-
+	private InteractBehaviour FindClosestInteractable()
+	{
+		if( inRangeElements.Count < 1)
+			return null;
+		InteractBehaviour ret = inRangeElements[0];
+		float dist = Vector3.Distance(transform.position, inRangeElements[0].transform.position);
+		if( inRangeElements.Count == 1)
+			return ret;
+		foreach (InteractBehaviour i in inRangeElements)
+        {
+			if( dist > Vector3.Distance(transform.position, i.transform.position))
+			{
+				dist = Vector3.Distance(transform.position, i.transform.position);
+				ret = i;
+			}
+		}
+		return ret;
+	}
+	private void DisplayInteractionTooltip()
+	{
+		if ( dead )
+			return;
+		
+		interactionTooltip.text = "";
+		InteractBehaviour closest = FindClosestInteractable();
+		if( closest != null) 
+        {
+			if (closest.customInteractiveText() != null)
+				interactionTooltip.text = "Press E "+closest.customInteractiveText();
+		}				
+	}
 	public void channeledTriggerExit(Collider other)
 	{
 		if( other.gameObject.tag == "Interactable")
 		{
-			InteractBehaviour removeThis = other.GetComponent<InteractBehaviour>();
+            InteractBehaviour removeThis = other.GetComponent<InteractBehaviour>();
+            if (removeThis.GetType() == typeof(RabbitGroupBehavior))
+            {
+                ((RabbitGroupBehavior)removeThis).Deactivate();
+            }
 			inRangeElements.Remove(removeThis);
+
 		}
 	}
 
     void OnGUI()
     {
 		const int x = 25;
-		const int y = 400;
+		const int y = 300;
         if (movementMode != -1)
         {
             //progressbar
@@ -474,17 +577,44 @@ public class PlayerController : MonoBehaviour {
                 movementMode = 0;
         }
     }
-
+	private void Die()
+	{
+		dead = true;
+		// change mesh to lying 
+		sittingPlayerMesh.SetActive(false);
+		standingPlayerMesh.SetActive(false);
+		deadPlayerMesh.SetActive(true);
+		// start Death sounds
+		PlayDeathSound();
+		// clean the interaction Tooltip text
+		interactionTooltip.text = "You died.";	
+		// show the credits
+		gui.showCredits();
+	}
+	private void FadeSounds(float timeDelta)
+	{
+		if(sittingSound.audio.isPlaying)
+		{
+			if ( fadingSittingVolume < 1.0f)
+				fadingSittingVolume += timeDelta*0.2f;
+			sittingSound.audio.volume = fadingSittingVolume;			
+		}
+	}
 	private void PlaySittingSound()
 	{
-		foreach ( AudioSource sound in GetComponentsInChildren<AudioSource>())
-		{
-			if ( sound.name == "SittingSound")
-			{
-				if (sound.audio != null && !sound.audio.isPlaying) 
-					sound.audio.Play();				
-			}
-		}		
+		sittingSound.audio.Play();
+		fadingSittingVolume = 0.0f;
+	}
+	private void StopSittingSound()
+	{
+		sittingSound.audio.Stop();
+		fadingSittingVolume = 0.0f;
+		sittingSound.audio.volume = fadingSittingVolume;
+	}
+	private void PlayDeathSound()
+	{
+		StopSittingSound();
+		dyingSound.Play();
 	}
 }
 
