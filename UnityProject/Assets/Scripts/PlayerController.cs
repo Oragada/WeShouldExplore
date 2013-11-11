@@ -35,7 +35,7 @@ public class PlayerController : MonoBehaviour {
 	private bool dead = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
-	private float totalSittingTime = 0.0f; //100.0f for testing
+	private float totalSittingTime = 0f; //100.0f for testing
 	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
@@ -47,7 +47,7 @@ public class PlayerController : MonoBehaviour {
 	private GameObject sittingPlayerMesh;
 	private GameObject standingPlayerMesh;
 	private GameObject deadPlayerMesh;
-	private SphereCollider collisionHelper;
+	public SphereCollider collisionHelper;
 	private List<SphereCollider> collidingObj;
 	//Sounds
 	private AudioSource sittingSound;
@@ -82,7 +82,7 @@ public class PlayerController : MonoBehaviour {
 		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
 		standingPlayerMesh.SetActive(true);		
 		// colliding stuffs
-		collisionHelper = transform.FindChild("ObstacleCollider").gameObject.GetComponent<SphereCollider>();
+        collisionHelper = transform.FindChild("ObstacleCollider").gameObject.GetComponent<SphereCollider>();
 		collidingObj = new List<SphereCollider>();
 	}	
 
@@ -540,7 +540,7 @@ public class PlayerController : MonoBehaviour {
     void OnGUI()
     {
 		const int x = 25;
-		const int y = 400;
+		const int y = 300;
         if (movementMode != -1)
         {
             //progressbar
