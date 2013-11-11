@@ -4,46 +4,59 @@ using System.Linq;
 
 public class RabbitMovement : MonoBehaviour
 {
-    public float RunDirection = 0f;
-    public bool Escaping = false;
-    public float Speed = 1.5f;
+    public Quaternion InitialFace { get; set; }
 
-	// Use this for initialization
-	void Start () {
-	
+    public int activated = 0;
+    public int deactivated = 0;
+
+    // Use this for initialization
+    void Start()
+    {
+        InitialFace = transform.rotation;
 	}
 	
 	// Update is called once per frame
 	void Update () 
     {
-        //0 -> 1z, 0x
-        //90 -> 0z, 1x
-        //180 -> -1z, 0x
-        //270 -> 0z, -1x
-        //cos -> x
-        //sin -> z
 
-	    if (Escaping)
-	    {
-            float xMod = Mathf.Cos(RunDirection / 180 * Mathf.PI);
-            float zMod = Mathf.Sin(RunDirection / 180 * Mathf.PI);
-
-            transform.position += (new Vector3(zMod, 0, xMod) * Speed * Time.deltaTime);
-	    }
 	}
 
     void OnTriggerEnter(Collider other)
     {
         if (other.tag == "NextTileTriggers")
         {
-            this.GetComponentsInChildren<MeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
+            GetComponentsInChildren<MeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
+            //Destroy(this);
         }
     }
 
-    public void Activate(float direction)
+    /*public void Activate(Vector3 look)
     {
-        Escaping = true;
-        RunDirection = direction;
-        transform.transform.eulerAngles = new Vector3(0,direction,0);
+        activated++;
+        gameObject.transform.LookAt(look+transform.position);
+    }*/
+
+    public void Look(Vector3 look)
+    {
+        gameObject.transform.LookAt(look + transform.position);
     }
+
+    public void Bliss()
+    {
+        transform.rotation = InitialFace;
+    }
+
+    /*public void Deactivate(RabbitBehaviour behaviour)
+    {
+        deactivated++;
+        switch (behaviour)
+        {
+            case RabbitBehaviour.Ignore:
+            case RabbitBehaviour.Observe:
+                
+                break;
+            default:
+                break;
+        }
+    }*/
 }

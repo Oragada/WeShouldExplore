@@ -33,8 +33,8 @@ public class PlayerController : MonoBehaviour {
 	private bool interact = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
-	private float totalSittingTime = 100.0f; //100.0f for testing
-	private uint nearInteractionCounter = 20; // 45 for testing
+	private float totalSittingTime = 0.0f; //100.0f for testing
+	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
 	private float start = 0.0f;
@@ -169,8 +169,23 @@ public class PlayerController : MonoBehaviour {
 			totalSittingTime += Time.deltaTime; // count seconds spend sitting;
 		FadeSounds(Time.deltaTime);
 		lastPos = gameObject.transform.position;
+
+	    BunnyCheck();
 	}
-	
+
+    private void BunnyCheck()
+    {
+        foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
+        {
+            var rabbit = rab;
+            Vector3 toRabVec = (rabbit.transform.position - transform.position);
+            toRabVec.y *= 0;
+            toRabVec.Normalize();
+            rabbit.RunDirection = toRabVec;
+            rabbit.activate(progress);
+        }
+    }
+
     public void PickUpObject(CarryObject pickedObject)
     {
         //Check combination
@@ -188,8 +203,9 @@ public class PlayerController : MonoBehaviour {
         switch (Obj)
         {
             case CarryObject.Nothing:
-            case CarryObject.Leaf:
-                return newObject;
+            //case CarryObject.Leaf:
+                return Obj;
+                //return newObject;
             case CarryObject.Bouquet:
             case CarryObject.Flower:
                 switch (newObject)
@@ -197,7 +213,7 @@ public class PlayerController : MonoBehaviour {
                     case CarryObject.Flower:
                         return CarryObject.Bouquet;
                     default:
-                        return newObject;
+                        return Obj;
                 }
             default:
                 return CarryObject.Nothing;
@@ -362,6 +378,7 @@ public class PlayerController : MonoBehaviour {
 			setPlayersYPosition();
 		}
 	}
+
 	private Vector3 checkForCollisions(Direction moved)
 	{
 		
@@ -502,18 +519,20 @@ public class PlayerController : MonoBehaviour {
 			}
 			
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
+
+            /*if (addThis.GetType() == typeof (RabbitGroupBehavior))
+            {
+                RabbitGroupBehavior rabbit = (RabbitGroupBehavior) addThis;
+                Vector3 toRabVec = (rabbit.transform.position - transform.position);
+                toRabVec.y *= 0;
+                toRabVec.Normalize();
+                rabbit.runDirection = toRabVec;
+                rabbit.activate(progress);
+            }*/
+
 			inRangeElements.Add(addThis);
 			nearInteractionCounter++;
 
-            foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
-            {
-                var rabbit = rab;
-                Vector3 toCenterVec = (rabbit.transform.position - transform.position);
-                toCenterVec.y *= 0;
-                toCenterVec.Normalize();
-                rabbit.runDirection = Mathf.Acos(toCenterVec[2]) * (180 / Mathf.PI);
-                rabbit.activate(progress);
-            }
 		}
 	}
 
@@ -521,8 +540,13 @@ public class PlayerController : MonoBehaviour {
 	{
 		if( other.gameObject.tag == "Interactable")
 		{
-			InteractBehaviour removeThis = other.GetComponent<InteractBehaviour>();
+            InteractBehaviour removeThis = other.GetComponent<InteractBehaviour>();
+            if (removeThis.GetType() == typeof(RabbitGroupBehavior))
+            {
+                ((RabbitGroupBehavior)removeThis).Deactivate();
+            }
 			inRangeElements.Remove(removeThis);
+
 		}
 	}
 
