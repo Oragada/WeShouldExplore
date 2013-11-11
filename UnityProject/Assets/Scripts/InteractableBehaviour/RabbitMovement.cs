@@ -6,8 +6,9 @@ public class RabbitMovement : MonoBehaviour
 {
     public Quaternion InitialFace { get; set; }
 
-    public int activated = 0;
-    public int deactivated = 0;
+    public Vector3 localC = new Vector3();
+    public Vector3 localPos = new Vector3();
+    public Vector3 lookP = new Vector3();
 
     // Use this for initialization
     void Start()
@@ -30,35 +31,13 @@ public class RabbitMovement : MonoBehaviour
         }
     }
 
-    /*public void Activate(Vector3 look)
-    {
-        activated++;
-        gameObject.transform.LookAt(look+transform.position);
-    }*/
-
     public void Look(Vector3 look)
     {
-        Vector3 lookPos = transform.position + look;// -transform.localPosition;
-        //lookPos.y *= 0;
-        gameObject.transform.LookAt(lookPos);
+        gameObject.transform.LookAt(look);
     }
 
     public void Bliss()
     {
         transform.rotation = InitialFace;
     }
-
-    /*public void Deactivate(RabbitBehaviour behaviour)
-    {
-        deactivated++;
-        switch (behaviour)
-        {
-            case RabbitBehaviour.Ignore:
-            case RabbitBehaviour.Observe:
-                
-                break;
-            default:
-                break;
-        }
-    }*/
 }
