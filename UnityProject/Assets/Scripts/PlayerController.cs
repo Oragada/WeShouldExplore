@@ -265,8 +265,8 @@ public class PlayerController : MonoBehaviour {
 		// compute new progress value:
 		progress = Mathf.Min(1.01f, (Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f);
 		// set attributes accordingly
-		float grey = Mathf.Min(1.0f, -0.4f*progress+0.5f);
-		playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
+		//float grey = Mathf.Min(1.0f, -0.4f*progress+0.5f);
+		//playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
 		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
 		speed = Mathf.Max(20.0f, 45.0f - (progress*40.0f)); // reduced speed
 		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding
@@ -373,21 +373,25 @@ public class PlayerController : MonoBehaviour {
 					break;
 			}		
 			lastDir = moved;			
-			Vector3 dir = checkForCollisions(moved);
-			gameObject.transform.Translate(dir*Time.deltaTime*speed*0.1f); //move forward a step		
+			Vector3 dir = checkForCollisions(moved);			
+			Vector3 propagatedPos = gameObject.transform.position+(dir*Time.deltaTime*speed*0.1f); //move forward a step	
+			propagatedPos = CheckPropagatedPos( propagatedPos );
+			if (propagatedPos==Vector3.zero)
+				gameObject.transform.Translate(dir*Time.deltaTime*speed*0.1f); //move forward a step		
+			else 
+				gameObject.transform.Translate(propagatedPos); //move forward a step		
 			elapsedTime = 0.0f;
 		}
 		else if(elapsedTime <= duration && progress < THRESH_FOR_NO_COLLISION) // inertia
 		{
 			Interpolate.Function test = Interpolate.Ease(Interpolate.EaseType.EaseOutSine);
 			float incVal = test(start, distance,elapsedTime, duration);
-			//Debug.Log ("val:"+incVal+" s:"+start + " d:"+distance+" elT:"+elapsedTime+" dur:"+duration);
+			//Debug.Log ("val:"+incVal+" s:"+start + " d:"+distance+" elT:"+elapsedTime+" dur:"+duration);			
 			gameObject.transform.Translate(new Vector3( distance-incVal,0.0f,0.0f)*Time.deltaTime*speed);
 			elapsedTime += Time.deltaTime;			
 			moved = lastDir;
 		}
 		
-			
 		collidingObj.Clear();
 		//set the players Y pos depending on the terrain
 		// only if he was moved by player or inertia
@@ -396,10 +400,23 @@ public class PlayerController : MonoBehaviour {
 			setPlayersYPosition();
 		}
 	}
+	private Vector3 CheckPropagatedPos(Vector3 propagtedPos)
+	{
 
+		foreach( SphereCollider enemy in collidingObj)
+		{
+			Debug.Log("PropagatedPos: "+propagtedPos.ToString()+" EnemyPos:"+ enemy.transform.position.ToString()+ " Dist: "+Vector3.Distance(propagtedPos,enemy.transform.position).ToString());
+			if ( 2.0f*(collisionHelper.radius+enemy.radius) > Vector3.Distance(propagtedPos,enemy.transform.position))
+			{
+						Debug.Log ("Not Good");
+				
+		
+			}
+		}
+		return Vector3.zero;
+	}
 	private Vector3 checkForCollisions(Direction moved)
 	{
-		
 		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
 		foreach( SphereCollider enemy in collidingObj)
 		{
@@ -413,8 +430,8 @@ public class PlayerController : MonoBehaviour {
 			// *0.7f makes sure that diagonal movement should be save ( 1 / sqrt(2) )
 			ret.Set((dif.x)/(Time.deltaTime*speed*0.7f), ret.y,(dif.z)/(Time.deltaTime*speed*0.7f));
 			//test 
-			//ret.Set(ret.x - (Mathf.Abs(dif.x)+collisionHelper.radius), ret.y, ret.z);
-		}				
+			//ret.Set((0.0f), ret.y,(dif.z)/(Time.deltaTime*speed*0.7f));
+		}			
 		return ret;
 	}	
     private void setPlayersYPosition()
@@ -433,6 +450,17 @@ public class PlayerController : MonoBehaviour {
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
 	}	
+	public void channeledTriggerStay (Collider other)
+	{
+		if( other.name == "CollisionCollider")
+		{			
+			SphereCollider enemy = other.GetComponent<SphereCollider>();
+			if (enemy != null)
+			{
+				collidingObj.Add( enemy );				
+			}
+		}
+	}
     public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -520,6 +548,15 @@ public class PlayerController : MonoBehaviour {
 				nearInteractionCounter++;
 			}
 		}
+		else if( other.name == "CollisionCollider")
+		{			
+			SphereCollider enemy = other.GetComponent<SphereCollider>();
+			if (enemy != null)
+			{
+				collidingObj.Add( enemy );	
+				playerMat.color = new Color(1.0f,0.0f,0.0f, 1.0f); // transparency
+			}
+		}
 	}
 	private InteractBehaviour FindClosestInteractable()
 	{
@@ -564,6 +601,16 @@ public class PlayerController : MonoBehaviour {
 			inRangeElements.Remove(removeThis);
 
 		}
+		if( other.name == "CollisionCollider")
+		{			
+			SphereCollider enemy = other.GetComponent<SphereCollider>();
+			if (enemy != null)
+			{
+				float grey = Mathf.Min(1.0f, -0.4f*progress+0.5f);
+				playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
+			}
+		}		
+		
 	}
 
     void OnGUI()
