@@ -172,10 +172,10 @@ public class PlayerController : MonoBehaviour {
         foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
         {
             var rabbit = rab;
-            Vector3 toRabVec = (rabbit.transform.position - transform.position);
-            toRabVec.y *= 0;
-            toRabVec.Normalize();
-            rabbit.RunDirection = toRabVec;
+            Vector3 toPlayerVec = (transform.position - rabbit.transform.position);
+            toPlayerVec.y *= 0;
+            //toRabVec.Normalize();
+            rabbit.PlayerPos = toPlayerVec;
             rabbit.activate(progress);
         }
     }
@@ -198,8 +198,8 @@ public class PlayerController : MonoBehaviour {
         {
             case CarryObject.Nothing:
             //case CarryObject.Leaf:
-                return Obj;
-                //return newObject;
+                //return Obj;
+                return newObject;
             case CarryObject.Bouquet:
             case CarryObject.Flower:
                 switch (newObject)
@@ -565,8 +565,8 @@ public class PlayerController : MonoBehaviour {
             //in range elements count
             GUI.Label(new Rect(x, y + 220, 100, 20), "Debug:");
             //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
-            GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements.OfType<RabbitGroupBehavior>().Count().ToString(CultureInfo.InvariantCulture));
-            //GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
+            //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements.OfType<RabbitGroupBehavior>().Count().ToString(CultureInfo.InvariantCulture));
+            GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
 
             if (test > 1.5f)
                 movementMode = 2;

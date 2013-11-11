@@ -13,7 +13,7 @@ public class RabbitMovement : MonoBehaviour
     void Start()
     {
         InitialFace = transform.rotation;
-	}
+    }
 	
 	// Update is called once per frame
 	void Update () 
@@ -38,7 +38,9 @@ public class RabbitMovement : MonoBehaviour
 
     public void Look(Vector3 look)
     {
-        gameObject.transform.LookAt(look + transform.position);
+        Vector3 lookPos = transform.position + look;// -transform.localPosition;
+        //lookPos.y *= 0;
+        gameObject.transform.LookAt(lookPos);
     }
 
     public void Bliss()
