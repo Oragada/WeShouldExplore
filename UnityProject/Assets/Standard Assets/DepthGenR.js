@@ -4,6 +4,7 @@ var groundObject : GameObject;
 var depth : Mesh;
 var mat : Material;
 
+var renderInit = 0;
 
 function Start () {
 
@@ -19,8 +20,11 @@ function Update () {
 
 function Generate() {
 
-	gameObject.AddComponent(MeshFilter);
-	gameObject.AddComponent(MeshRenderer);
+	if(renderInit == 0) {
+		gameObject.AddComponent(MeshFilter);
+		gameObject.AddComponent(MeshRenderer);
+		renderInit = 1;
+	}
 
 	var heightD = 2;
 	var width = 20;
