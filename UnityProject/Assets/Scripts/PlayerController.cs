@@ -34,7 +34,7 @@ public class PlayerController : MonoBehaviour {
 	private bool dead = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
-	private float totalSittingTime = 0f; //100.0f for testing
+	private float totalSittingTime = 0.0f; //100.0f for testing
 	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
@@ -55,7 +55,8 @@ public class PlayerController : MonoBehaviour {
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
-
+	private Camera isoCam;
+	public Color background;
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
@@ -73,6 +74,8 @@ public class PlayerController : MonoBehaviour {
 		// find sounds
 		sittingSound = GameObject.Find("AudioSit").audio;
 		dyingSound = GameObject.Find("AudioDeath").audio;
+		// find camera
+		isoCam = GameObject.Find("IsoCamera").camera;
 		// find meshes		
 		deadPlayerMesh= transform.FindChild("player_dead").gameObject;
 		deadPlayerMesh.SetActive(false);
@@ -249,13 +252,19 @@ public class PlayerController : MonoBehaviour {
 		// compute new progress value:
 		progress = Mathf.Min(1.01f, (Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f);
 		// set attributes accordingly
-		float grey = Mathf.Min(1.0f, 1.2f-progress);
+		float grey = Mathf.Min(1.0f, -0.4f*progress+0.5f);
 		playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
 		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
 		speed = Mathf.Max(25.0f, 45.0f - (progress*40.0f)); // reduced speed
 		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding
 		distance = Mathf.Max(0.0f, 0.1f - progress);		// reduced sliding
 		
+		//start fading the background to black
+		if (progress > 0.9f)
+		{			
+			float lower = (1.0f - (progress))/0.1f;
+			isoCam.backgroundColor = new Color ( background.r*lower , background.g*lower, background.b*lower, 1.0f);
+		}
 		// he dies at progress 1.0f
 		if (progress > 1.0f)
 		{
@@ -469,9 +478,9 @@ public class PlayerController : MonoBehaviour {
 			Transform colli = other.transform.FindChild("CollisionCollider");
 			if( colli != null)
 			{
-				
 				SphereCollider enemy = colli.GetComponent<SphereCollider>();
-				collidingObj.Add( colli.GetComponent<SphereCollider>() );
+				if (enemy != null)
+					collidingObj.Add( colli.GetComponent<SphereCollider>() );				
 			}
 			
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
