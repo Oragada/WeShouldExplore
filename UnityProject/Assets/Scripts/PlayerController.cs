@@ -22,7 +22,8 @@ public class PlayerController : MonoBehaviour {
 	
 	// gui elements
 	public TutorialGui gui;
-
+	private GUIText interactionTooltip;
+	
 	//privates
 	private GameObject groundTile;
 	private bool isSitting=false;
@@ -31,6 +32,7 @@ public class PlayerController : MonoBehaviour {
 	private float progress=0.11f;
 	private bool sit = false;
 	private bool interact = false;
+	private bool dead = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
 	private float totalSittingTime = 0.0f; //100.0f for testing
@@ -54,7 +56,7 @@ public class PlayerController : MonoBehaviour {
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
-		private Vector3 lastPos;
+
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
@@ -62,7 +64,8 @@ public class PlayerController : MonoBehaviour {
 		inRangeElements = new List<InteractBehaviour>();
 		
 		groundTile = GameObject.Find("GroundTile");
-		
+		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
+		interactionTooltip.text = "";
         //Obj = CarryObject.Nothing;
 
         carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
@@ -85,10 +88,9 @@ public class PlayerController : MonoBehaviour {
 
 	
 	void Update () {
-		if (progress >= 1.0f)
-		{
+		if (dead)
 			return;
-		}
+		
 		// Cache the inputs.
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
@@ -105,10 +107,7 @@ public class PlayerController : MonoBehaviour {
 			if(!isSitting) 
 			{
 				// hide how to sit in the gui
-				if(!gui.isSitDone())
-				{
-					gui.fadeOutGuiElement(Tutorials.sit);
-				}		
+				gui.doneSit();
 				//sit down
 				sittingPlayerMesh.SetActive(true);
 				standingPlayerMesh.SetActive(false);
@@ -120,10 +119,7 @@ public class PlayerController : MonoBehaviour {
 			}
 			else
 			{
-				if(!gui.isStandingUpDone())
-				{
-					gui.fadeOutGuiElement(Tutorials.standup);
-				}	
+				gui.doneStandingUp();
 				//stand up again
 				sittingPlayerMesh.SetActive(false);
 				standingPlayerMesh.SetActive(true);
@@ -136,15 +132,13 @@ public class PlayerController : MonoBehaviour {
 		
 		if( interact )
         {
-			if(!gui.isInteractDone())
-			{
-				gui.fadeOutGuiElement(Tutorials.interact);
-			}
-			if( inRangeElements.Count > 0)
-			{
-				CarryObject co = inRangeElements[0].activate(progress);
+			InteractBehaviour closest = FindClosestInteractable();
+			if( closest != null) 
+	        {
+				CarryObject co = closest.activate(progress);
                 PickUpObject(co);
-			}
+				gui.doneInteract();
+			}	
 		}
 		else
 		{ 
@@ -167,8 +161,9 @@ public class PlayerController : MonoBehaviour {
 		}	
 		else
 			totalSittingTime += Time.deltaTime; // count seconds spend sitting;
-		FadeSounds(Time.deltaTime);
-		lastPos = gameObject.transform.position;
+		
+		FadeSounds(Time.deltaTime);		
+		DisplayInteractionTooltip();		
 
 	    BunnyCheck();
 	}
@@ -263,7 +258,7 @@ public class PlayerController : MonoBehaviour {
 		distance = Mathf.Max(0.0f, 0.1f - progress);		// reduced sliding
 		
 		// he dies at progress 1.0f
-		if (progress >= 1.0f)
+		if (progress > 1.0f)
 		{
 			Die();
 		}
@@ -331,10 +326,7 @@ public class PlayerController : MonoBehaviour {
 		// apply the movement-vector to the player if he moved
 		if(moved != Direction.None)			
 		{		
-			if(!gui.isMoveDone())//hide tutorial
-			{
-				gui.fadeOutGuiElement(Tutorials.move);				
-			}
+			gui.doneMove();
 			switch(moved)//rotation
 			{
 				case Direction.North: gameObject.transform.eulerAngles = new Vector3(0.0f,0.0f,0.0f);
@@ -385,40 +377,18 @@ public class PlayerController : MonoBehaviour {
 		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
 		foreach( SphereCollider enemy in collidingObj)
 		{
+			//compute collision-vector between this-SphereCollider and the other-SphereCollider
 			Vector3 dif = collisionHelper.transform.position - enemy.transform.position;
+			// ignore Y-difference
 			dif.y = 0.0f;
-			//dif.Normalize();
-			
-			float totalDif = collisionHelper.radius + enemy.radius;
-			
-			/*Debug.Log ( collisionHelper.transform.position.ToString());
-			Debug.Log ( enemy.transform.position.ToString());
-			Debug.Log ( "---");
-			Debug.Log ( dif.ToString());*/
-			
+			// convert the collision-vector to local space, because player rotates in the movementfunction
+			dif = transform.InverseTransformDirection(dif);	
+    		// offset the player frame & speed independent 
+			// *0.7f makes sure that diagonal movement should be save ( 1 / sqrt(2) )
+			ret.Set((dif.x)/(Time.deltaTime*speed*0.7f), ret.y,(dif.z)/(Time.deltaTime*speed*0.7f));
+			//test 
 			//ret.Set(ret.x - (Mathf.Abs(dif.x)+collisionHelper.radius), ret.y, ret.z);
-			ret.Set((dif.x)/(Time.deltaTime*speed*1.0f), ret.y,(dif.z)/(Time.deltaTime*speed*1.0f));
-			Quaternion quat = new Quaternion();
-			
-			switch(moved)//rotation
-			{				
-				case Direction.East: quat = Quaternion.Euler(0.0f,270.0f,0.0f);
-					break;
-				case Direction.South: quat = Quaternion.Euler(0.0f,180.0f,0.0f);
-					break;
-				case Direction.West: quat = Quaternion.Euler(0.0f,90.0f,0.0f);
-					break;
-				case Direction.NorthEast: quat = Quaternion.Euler(0.0f,315.0f,0.0f);
-					break;
-				case Direction.NorthWest: quat = Quaternion.Euler(0.0f,45.0f,0.0f);
-					break;
-				case Direction.SouthEast: quat = Quaternion.Euler(0.0f,225.0f,0.0f);
-					break;
-				case Direction.SouthWest: quat = Quaternion.Euler(0.0f,135.0f,0.0f);
-					break;
-			}
-			ret = quat * ret;
-		}		
+		}				
 		return ret;
 	}	
     private void setPlayersYPosition()
@@ -436,20 +406,7 @@ public class PlayerController : MonoBehaviour {
 		if (Mathf.Abs(diff) > 0.0001f)
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
-	}
-	public void channeledTriggerStay(Collider other)
-	{
-		if( other.gameObject.tag == "Interactable")
-		{
-			Transform colli = other.transform.FindChild("CollisionCollider");
-			if( colli != null)
-			{
-				
-				SphereCollider enemy = colli.GetComponent<SphereCollider>();
-				collidingObj.Add( colli.GetComponent<SphereCollider>() );
-			}
-		}
-	}
+	}	
     public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -504,7 +461,7 @@ public class PlayerController : MonoBehaviour {
 			
 			// update tile, pass the direction along
 			groundTile.GetComponent<GroundGen>().showNextTile(dir);
-			
+			gui.doneFollow();
 			//groundTile.GetComponent<GroundGen>().
 			setPlayersYPosition();
 		}
@@ -535,7 +492,37 @@ public class PlayerController : MonoBehaviour {
 
 		}
 	}
-
+	private InteractBehaviour FindClosestInteractable()
+	{
+		if( inRangeElements.Count < 1)
+			return null;
+		InteractBehaviour ret = inRangeElements[0];
+		float dist = Vector3.Distance(transform.position, inRangeElements[0].transform.position);
+		if( inRangeElements.Count == 1)
+			return ret;
+		foreach (InteractBehaviour i in inRangeElements)
+        {
+			if( dist > Vector3.Distance(transform.position, i.transform.position))
+			{
+				dist = Vector3.Distance(transform.position, i.transform.position);
+				ret = i;
+			}
+		}
+		return ret;
+	}
+	private void DisplayInteractionTooltip()
+	{
+		if ( dead )
+			return;
+		
+		interactionTooltip.text = "";
+		InteractBehaviour closest = FindClosestInteractable();
+		if( closest != null) 
+        {
+			if (closest.customInteractiveText() != null)
+				interactionTooltip.text = "Press E "+closest.customInteractiveText();
+		}				
+	}
 	public void channeledTriggerExit(Collider other)
 	{
 		if( other.gameObject.tag == "Interactable")
@@ -592,12 +579,17 @@ public class PlayerController : MonoBehaviour {
     }
 	private void Die()
 	{
+		dead = true;
 		// change mesh to lying 
 		sittingPlayerMesh.SetActive(false);
 		standingPlayerMesh.SetActive(false);
 		deadPlayerMesh.SetActive(true);
 		// start Death sounds
 		PlayDeathSound();
+		// clean the interaction Tooltip text
+		interactionTooltip.text = "You died.";	
+		// show the credits
+		gui.showCredits();
 	}
 	private void FadeSounds(float timeDelta)
 	{
