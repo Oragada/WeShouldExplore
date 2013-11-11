@@ -248,7 +248,7 @@ function ChangeTerrain() {
 
     currentScat = currentScat.concat(ScatterRabbits(availablePositions, rabbits, 0, 1, 2, 0, 1));
     
-    currentScat = currentScat.concat(Scatter(availablePositions, pebble, -0.1, 10, 20, 1, 1));
+    currentScat = currentScat.concat(Scatter(availablePositions, pebble, 0, 10, 20, 1, 1));
     
     currentScat = currentScat.concat(ScatterGrass(availablePositions, grass,/*offsetY*/ 0.4,/*quantityMin*/ 400,/*quantityMax*/ 500,/*rigidBody*/ 0,/*randomRotation*/ 0));
 	
