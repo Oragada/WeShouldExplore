@@ -13,7 +13,7 @@ public class RabbitGroupBehavior : InteractBehaviour
 	public float Speed = 3.5f;
 	//private Vector3 initialFace;
 	public float CurrentSpeed = 0f;
-	public float Decel = -0.01f;
+	public float Decel = -0.05f;
 
 	public RabbitGroupBehavior()
 	{

@@ -34,7 +34,7 @@ public class PlayerController : MonoBehaviour {
 	private bool dead = false;
     private List<InteractBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
-	private const float THRESH_FOR_PEBBLE_KICKING = 0.2f;
+	private const float THRESH_FOR_PEBBLE_KICKING = 0.1f;
 	private const float THRESH_FOR_TRUE_INTERACTION_TO_COUNT = 0.1f;
 	private float totalSittingTime = 0.0f; //100.0f for testing
 	private uint nearInteractionCounter = 0; // 45 for testing

@@ -418,6 +418,10 @@ function ScatterRabbits(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody
 	var scat = new Array();
 	
 	var quantity = Random.Range(quantityMin,quantityMax);
+
+    if(Random.Range(0.0,1.0) > 0.5){
+        return scat;
+    }
 	
 	for (var i=0;i<quantity;i++) {
 	
