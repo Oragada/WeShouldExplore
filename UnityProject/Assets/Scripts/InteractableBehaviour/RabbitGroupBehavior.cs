@@ -8,7 +8,7 @@ public enum RabbitBehaviour{Ignore, Observe, Move, Flee}
 public class RabbitGroupBehavior : InteractBehaviour
 {
 	public RabbitBehaviour Behaviour; //{ get; private set; }
-	public Vector3 PlayerPos { get; set; }
+    public Vector3 PlayerPos; // { get; set; }
 	public bool PlayerInRange = false;
 	public float Speed = 3.5f;
 	//private Vector3 initialFace;
@@ -43,11 +43,11 @@ public class RabbitGroupBehavior : InteractBehaviour
 				case RabbitBehaviour.Ignore:
 					break;
 				case RabbitBehaviour.Observe:
-					GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Look(PlayerPos));
+					GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Look(PlayerPos + transform.position));
 					break;
 				case RabbitBehaviour.Move:
 				case RabbitBehaviour.Flee:
-					GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Look(PlayerPos * -1));
+                    GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Look(PlayerPos * -1 + transform.position));
 					CurrentSpeed = Speed;
 					break;
 				default:
@@ -72,7 +72,7 @@ public class RabbitGroupBehavior : InteractBehaviour
 		}
 
 		Vector3 move = PlayerPos*-1;
-		move.y *= 0;
+		//move.y *= 0;
 
 		move.Normalize();
 
