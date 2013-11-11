@@ -248,60 +248,13 @@ function ChangeTerrain() {
 
     currentScat = currentScat.concat(ScatterRabbits(availablePositions, rabbits, 0, 1, 2, 0, 1));
     
-    currentScat = currentScat.concat(Scatter(availablePositions, pebble, 0, 10, 20, 1, 1));
+    currentScat = currentScat.concat(ScatterPebble(availablePositions, pebble, 0, 10, 20, 1, 1));
     
     currentScat = currentScat.concat(ScatterGrass(availablePositions, grass,/*offsetY*/ 0.4,/*quantityMin*/ 400,/*quantityMax*/ 500,/*rigidBody*/ 0,/*randomRotation*/ 0));
 	
 	
 
 
-}
-
-function ScatterTrees(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, randomRotation) {
-
-	var scat = new Array();
-	
-	var quantity = Random.Range(quantityMin,quantityMax);
-	
-	for (var i=0;i<quantity;i++) {
-	
-		var temPos = Vector3(Random.Range(2,36)/2, 0, Random.Range(2,36)/2);
-		
-		var arrPointer = temPos.x+(temPos.z*width);
-		
-		temPos.x += Random.Range(-0.2,0.2);
-		temPos.z += Random.Range(-0.2,0.2);
-		
-		if (ap[arrPointer] == 0) {
-	
-			scat[i] = Instantiate (prefab, temPos, Quaternion.identity);
-			scat[i].transform.position.y = returnPlayerPos(scat[i].transform.position.x,scat[i].transform.position.z)+offsetY;
-		
-			if (randomRotation==1) {
-				//Rotate randomly around x-axis
-				scat[i].transform.eulerAngles.y = Random.Range(0, 360);
-			} else {
-				scat[i].transform.eulerAngles.y = 45;
-			}
-		 	
-			if (rigidBody == 1) {
-				scat[i].rigidbody.Sleep();
-			}
-			
-			ap[arrPointer] = 1;
-			ap[arrPointer-1] = 2;
-			ap[arrPointer+1] = 2;
-			ap[arrPointer-width] = 2;
-			ap[arrPointer-width-1] = 2;
-			ap[arrPointer-width+1] = 2;
-			ap[arrPointer+width] = 2;
-			ap[arrPointer+width-1] = 2;
-			ap[arrPointer+width+1] = 2;
-			
-			
-		}
-	}
-	return scat;
 }
 
 function Scatter(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, randomRotation) {
@@ -352,6 +305,104 @@ function Scatter(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, rando
 	}
 	return scat;
 }
+
+function ScatterPebble(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, randomRotation) {
+
+	var scat = new Array();
+	
+	var quantity = Random.Range(quantityMin,quantityMax);
+	
+	for (var i=0;i<quantity;i++) {
+	
+		var temPos = Vector3(Random.Range(2,36)/2, 0, Random.Range(2,36)/2);
+		
+		var arrPointer = temPos.x+(temPos.z*width);
+		
+		temPos.x += Random.Range(-0.2,0.2);
+		temPos.z += Random.Range(-0.2,0.2);
+		
+		if (ap[arrPointer] == 0 || ap[arrPointer] == 2) {
+	
+			scat[i] = Instantiate (prefab, temPos, Quaternion.identity);
+			scat[i].transform.position.y = returnPlayerPos(scat[i].transform.position.x,scat[i].transform.position.z)+offsetY;
+		
+			if (randomRotation==1) {
+				//Rotate randomly around x-axis
+				scat[i].transform.eulerAngles.y = Random.Range(0, 360);
+			} else {
+				scat[i].transform.eulerAngles.y = 45;
+			}
+		 	
+			if (rigidBody == 1) {
+				scat[i].rigidbody.Sleep();
+			}
+			
+			ap[arrPointer] = 1;
+			/*
+			ap[arrPointer-1] = 2;
+			ap[arrPointer+1] = 2;
+			ap[arrPointer-width] = 2;
+			ap[arrPointer-width-1] = 2;
+			ap[arrPointer-width+1] = 2;
+			ap[arrPointer+width] = 2;
+			ap[arrPointer+width-1] = 2;
+			ap[arrPointer+width+1] = 2;
+			*/
+			
+			
+		}
+	}
+	return scat;
+}
+
+function ScatterTrees(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, randomRotation) {
+
+	var scat = new Array();
+	
+	var quantity = Random.Range(quantityMin,quantityMax);
+	
+	for (var i=0;i<quantity;i++) {
+	
+		var temPos = Vector3(Random.Range(2,36)/2, 0, Random.Range(2,36)/2);
+		
+		var arrPointer = temPos.x+(temPos.z*width);
+		
+		temPos.x += Random.Range(-0.2,0.2);
+		temPos.z += Random.Range(-0.2,0.2);
+		
+		if (ap[arrPointer] == 0) {
+	
+			scat[i] = Instantiate (prefab, temPos, Quaternion.identity);
+			scat[i].transform.position.y = returnPlayerPos(scat[i].transform.position.x,scat[i].transform.position.z)+offsetY;
+		
+			if (randomRotation==1) {
+				//Rotate randomly around x-axis
+				scat[i].transform.eulerAngles.y = Random.Range(0, 360);
+			} else {
+				scat[i].transform.eulerAngles.y = 45;
+			}
+		 	
+			if (rigidBody == 1) {
+				scat[i].rigidbody.Sleep();
+			}
+			
+			ap[arrPointer] = 1;
+			ap[arrPointer-1] = 2;
+			ap[arrPointer+1] = 2;
+			ap[arrPointer-width] = 2;
+			ap[arrPointer-width-1] = 2;
+			ap[arrPointer-width+1] = 2;
+			ap[arrPointer+width] = 2;
+			ap[arrPointer+width-1] = 2;
+			ap[arrPointer+width+1] = 2;
+			
+			
+		}
+	}
+	return scat;
+}
+
+
 
 function ScatterGrass(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, randomRotation) {
 
@@ -419,6 +470,8 @@ function ScatterRabbits(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody
 	
 	var quantity = Random.Range(quantityMin,quantityMax);
 	
+	if (Random.Range(0.0,1.0)>0.5) {
+	
 	for (var i=0;i<quantity;i++) {
 	
 		var temPos = Vector3(Random.Range(6,32)/2, 0, Random.Range(6,32)/2);
@@ -458,6 +511,8 @@ function ScatterRabbits(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody
 			
 			
 		}
+	}
+	
 	}
 	return scat;
 }
