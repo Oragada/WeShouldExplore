@@ -9,7 +9,7 @@ public class TutorialGui : MonoBehaviour {
 	private bool tutSitDone=false;
 	private bool tutStandUpDone=false;
 	private bool tutInteractDone=false;
-	private bool tutFollowDone=false;
+	private bool tutFollowDone=true;// QUICK FIX to not show the last tutorial
 	
 	private const float DELAY_TIME=2.5f;
 	private GameObject credits;

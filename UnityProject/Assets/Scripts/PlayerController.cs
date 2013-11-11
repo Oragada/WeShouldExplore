@@ -469,9 +469,9 @@ public class PlayerController : MonoBehaviour {
 			Transform colli = other.transform.FindChild("CollisionCollider");
 			if( colli != null)
 			{
-				
 				SphereCollider enemy = colli.GetComponent<SphereCollider>();
-				collidingObj.Add( colli.GetComponent<SphereCollider>() );
+				if (enemy != null)
+					collidingObj.Add( colli.GetComponent<SphereCollider>() );				
 			}
 			
 			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
