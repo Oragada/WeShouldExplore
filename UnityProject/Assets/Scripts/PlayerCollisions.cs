@@ -14,6 +14,10 @@ public class PlayerCollisions : MonoBehaviour {
 	void Update () {
 	
 	}
+	void OnTriggerStay (Collider other)
+	{
+		myscript.channeledTriggerStay(other);
+	}
 	void OnTriggerEnter (Collider other)
 	{
 		myscript.channeledTriggerEnter(other);
