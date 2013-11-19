@@ -36,7 +36,9 @@ public class PlayerController : MonoBehaviour {
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
 	private const float THRESH_FOR_PEBBLE_KICKING = 0.1f;
 	private const float THRESH_FOR_TRUE_INTERACTION_TO_COUNT = 0.1f;
+	private const float THRESH_FOR_SITTING_SOUND_FADEOUT = 5.0f; // in seconds
 	private float totalSittingTime = 0.0f; //100.0f for testing
+	private float currSittingTime = 0.0f; //100.0f for testing
 	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
@@ -58,7 +60,11 @@ public class PlayerController : MonoBehaviour {
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
 	private Camera isoCam;
-	public Color background;
+	private Color background;
+	// Debug
+	private float progressOffset = 0.0f;
+	private bool fadeOut=false;
+	private float fadeOutFactor=0.2f;
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
@@ -78,6 +84,7 @@ public class PlayerController : MonoBehaviour {
 		dyingSound = GameObject.Find("AudioDeath").audio;
 		// find camera
 		isoCam = GameObject.Find("IsoCamera").camera;
+		background = isoCam.backgroundColor;
 		// find meshes		
 		deadPlayerMesh= transform.FindChild("player_dead").gameObject;
 		deadPlayerMesh.SetActive(false);
@@ -115,6 +122,7 @@ public class PlayerController : MonoBehaviour {
 				// hide how to sit in the gui
 				gui.doneSit();
 				//sit down
+				currSittingTime = 0.0f;
 				sittingPlayerMesh.SetActive(true);
 				standingPlayerMesh.SetActive(false);
 				//change the carrying position when sitting down
@@ -131,8 +139,10 @@ public class PlayerController : MonoBehaviour {
 				standingPlayerMesh.SetActive(true);
 				//change the carrying position when standing up again
 				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,+0.15f,0.0f);
-				StopSittingSound();
+				StopSittingSound(currSittingTime);
 				isSitting = false;
+				totalSittingTime  += currSittingTime;
+				currSittingTime = 0.0f;
 			}
 		}	
 		
@@ -169,7 +179,7 @@ public class PlayerController : MonoBehaviour {
 		}	
 		else
 		{
-			totalSittingTime += Time.deltaTime; // count seconds spend sitting;
+			currSittingTime += Time.deltaTime; // count seconds spend sitting;
 		}
 		FadeSounds(Time.deltaTime);		
 		DisplayInteractionTooltip();		
@@ -263,7 +273,7 @@ public class PlayerController : MonoBehaviour {
     private void checkProgress()
     {
 		// compute new progress value:
-		progress = Mathf.Min(1.01f, (Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f);
+		progress = Mathf.Min(1.01f, (Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f)+progressOffset;
 		// set attributes accordingly
 		float grey = Mathf.Min(1.0f, -0.4f*progress+0.5f);
 		playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
@@ -277,12 +287,10 @@ public class PlayerController : MonoBehaviour {
 			SetLayerRecursively(gameObject,(int)(LayerList.withPebbleCollision));
 		}
 		
-		//start fading the background to black
-		if (progress > 0.9f)
-		{			
-			float lower = (1.0f - (progress))/0.1f;
-			isoCam.backgroundColor = new Color ( background.r*lower , background.g*lower, background.b*lower, 1.0f);
-		}
+		//start fading the background to black				
+		float lower = Mathf.Min(1.0f,(1.0f - (progress))/0.1f);
+		isoCam.backgroundColor = new Color ( background.r*lower , background.g*lower, background.b*lower, 1.0f);
+	
 		// he dies at progress 1.0f
 		if (progress > 1.0f)
 		{
@@ -590,7 +598,7 @@ public class PlayerController : MonoBehaviour {
         {
             //progressbar
             GUI.Label(new Rect(x, y, 120, 20), "Progress: 0" + progress.ToString("#.##"));
-            progress = GUI.HorizontalSlider(new Rect(x, y + 20, 300, 10), progress, 0.00f, 0.99f);
+            progressOffset = GUI.HorizontalSlider(new Rect(x, y + 20, 300, 10), progressOffset, -1.0f, 1.0f);
 
             //speed slider
             GUI.Label(new Rect(x, y + 40, 120, 20), "Speed: " + speed.ToString(CultureInfo.InvariantCulture));
@@ -640,25 +648,44 @@ public class PlayerController : MonoBehaviour {
 	{
 		if(sittingSound.audio.isPlaying)
 		{
-			if ( fadingSittingVolume < 1.0f)
-				fadingSittingVolume += timeDelta*0.2f;
-			sittingSound.audio.volume = fadingSittingVolume;			
+			if (!fadeOut) // fade In
+			{
+				if ( fadingSittingVolume < 1.0f)
+					fadingSittingVolume += timeDelta*0.2f;
+				sittingSound.audio.volume = fadingSittingVolume;			
+			}
+			else // fade Out
+			{
+				if ( fadingSittingVolume > 0.01f)
+					fadingSittingVolume -= timeDelta*fadeOutFactor;
+				else 
+				{
+					sittingSound.audio.Stop();
+					fadeOut = false;
+				}
+				sittingSound.audio.volume = fadingSittingVolume;							
+			}
 		}
 	}
 	private void PlaySittingSound()
 	{
+		sittingSound.audio.time = sittingSound.audio.clip.length*Random.value; // starts at random pos in the track
 		sittingSound.audio.Play();
 		fadingSittingVolume = 0.0f;
 	}
-	private void StopSittingSound()
-	{
-		sittingSound.audio.Stop();
-		fadingSittingVolume = 0.0f;
+	private void StopSittingSound(float inTimeSpentSitting)
+	{		
+		if ( inTimeSpentSitting < THRESH_FOR_SITTING_SOUND_FADEOUT)
+			fadeOutFactor = 100.0f;
+		else
+			fadeOutFactor = Mathf.Lerp(0.5f, 0.03f, Mathf.Min (1.0f, (inTimeSpentSitting-THRESH_FOR_SITTING_SOUND_FADEOUT)/20.0f));
+		fadingSittingVolume = 1.0f;
 		sittingSound.audio.volume = fadingSittingVolume;
+		fadeOut = true;
 	}
 	private void PlayDeathSound()
 	{
-		StopSittingSound();
+		StopSittingSound(0.0f);
 		dyingSound.Play();
 	}
 }
