@@ -22,7 +22,7 @@ namespace Assets.Scripts.InteractableBehaviour
 
         public override CarryObject activate(float playerProgress)
         {
-            if (!flowerPicked)
+            if (!flowerPicked && playerProgress > 0.1f)
             {
                 //isActive = !isActive;
                 flowerPicked = true;
