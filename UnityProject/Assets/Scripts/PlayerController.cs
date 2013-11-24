@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour {
 	
 	// gui elements
 	public TutorialGui gui;
+	private ProgressManager progressMng;
 	private GUIText interactionTooltip;
 	
 	//privates
@@ -37,9 +38,7 @@ public class PlayerController : MonoBehaviour {
 	private const float THRESH_FOR_PEBBLE_KICKING = 0.1f;
 	private const float THRESH_FOR_TRUE_INTERACTION_TO_COUNT = 0.1f;
 	private const float THRESH_FOR_SITTING_SOUND_FADEOUT = 5.0f; // in seconds
-	private float totalSittingTime = 0.0f; //100.0f for testing
 	private float currSittingTime = 0.0f; //100.0f for testing
-	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
 	private float start = 0.0f;
@@ -62,7 +61,6 @@ public class PlayerController : MonoBehaviour {
 	private Camera isoCam;
 	private Color background;
 	// Debug
-	private float progressOffset = 0.0f;
 	private bool fadeOut=false;
 	private float fadeOutFactor=0.2f;
 	//get the collider component once, because the GetComponent-call is expansive
@@ -72,6 +70,7 @@ public class PlayerController : MonoBehaviour {
 		inRangeElements = new List<InteractBehaviour>();
 		
 		groundTile = GameObject.Find("GroundTile");
+		progressMng = (ProgressManager)GameObject.Find("Progression").GetComponent("ProgressManager");
 		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
 		interactionTooltip.text = "";
         //Obj = CarryObject.Nothing;
@@ -141,7 +140,7 @@ public class PlayerController : MonoBehaviour {
 				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,+0.15f,0.0f);
 				StopSittingSound(currSittingTime);
 				isSitting = false;
-				totalSittingTime  += currSittingTime;
+				progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, currSittingTime);
 				currSittingTime = 0.0f;
 			}
 		}	
@@ -155,7 +154,7 @@ public class PlayerController : MonoBehaviour {
                 PickUpObject(co);
 				gui.doneInteract();
 				if( progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
-					nearInteractionCounter++;
+					progressMng.usedMechanic( ProgressManager.Mechanic.Interaction );					
 			}	
 		}
 		else
@@ -273,14 +272,15 @@ public class PlayerController : MonoBehaviour {
     private void checkProgress()
     {
 		// compute new progress value:
-		progress = Mathf.Min(1.01f, (Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f)+progressOffset;
+		progressMng.computeProgress();
+		progress = progressMng.getProgress();
 		// set attributes accordingly
-		float grey = Mathf.Min(1.0f, -0.4f*progress+0.5f);
-		playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
+		float grey = progressMng.getValue(ProgressManager.Values.GreyPlayerColor);
+		playerMat.color = new Color(grey,grey,grey,  progressMng.getValue(ProgressManager.Values.Alpha)); // transparency
 		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
-		speed = Mathf.Max(20.0f, 45.0f - (progress*40.0f)); // reduced speed
-		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding
-		distance = Mathf.Max(0.0f, 0.1f - progress);		// reduced sliding
+		speed =  progressMng.getValue(ProgressManager.Values.Speed); // reduced speed
+		duration = progressMng.getValue(ProgressManager.Values.InertiaDuration); // reduced sliding
+		distance = progressMng.getValue(ProgressManager.Values.InertiaDistance); // reduced sliding
 		
 		if (progress > THRESH_FOR_PEBBLE_KICKING)
 		{			
@@ -288,7 +288,7 @@ public class PlayerController : MonoBehaviour {
 		}
 		
 		//start fading the background to black				
-		float lower = Mathf.Min(1.0f,(1.0f - (progress))/0.1f);
+		float lower = progressMng.getValue(ProgressManager.Values.BackgroundColorFactor);
 		isoCam.backgroundColor = new Color ( background.r*lower , background.g*lower, background.b*lower, 1.0f);
 	
 		// he dies at progress 1.0f
@@ -406,7 +406,7 @@ public class PlayerController : MonoBehaviour {
 	private Vector3 checkForCollisions(Direction moved)
 	{
 		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
-		if (progress < 0.1f) // do not collide before progress of 0.1f is reached
+		if (progressMng.getValue(ProgressManager.Values.CollisionSizePercent) == 0.0f) // do not compute collisions when the CollisionSizePercent is zero
 			return ret;
 		foreach( SphereCollider enemy in collidingObj)
 		{
@@ -414,6 +414,8 @@ public class PlayerController : MonoBehaviour {
 			Vector3 dif = collisionHelper.transform.position - enemy.transform.position;
 			// ignore Y-difference
 			dif.y = 0.0f;
+			//Debug.Log( "Dif: "+ dif.ToString()+ " Coll Size percent: "+progressMng.getValue(ProgressManager.Values.CollisionSizePercent));
+			dif *= progressMng.getValue(ProgressManager.Values.CollisionSizePercent);
 			// convert the collision-vector to local space, because player rotates in the movementfunction
 			dif = transform.InverseTransformDirection(dif);	
     		// offset the player frame & speed independent 
@@ -504,6 +506,7 @@ public class PlayerController : MonoBehaviour {
 			// update tile, pass the direction along
 			groundTile.GetComponent<GroundGen>().showNextTile(dir);
 			gui.doneFollow();
+			progressMng.usedMechanic(ProgressManager.Mechanic.Travel);
 			//groundTile.GetComponent<GroundGen>().
 			setPlayersYPosition();
 		}
@@ -533,7 +536,7 @@ public class PlayerController : MonoBehaviour {
 			
 			if( progress < THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
 			{
-				nearInteractionCounter++;
+				progressMng.usedMechanic( ProgressManager.Mechanic.Interaction );
 			}
 		}
 		else if( other.name == "CollisionCollider")
@@ -597,8 +600,8 @@ public class PlayerController : MonoBehaviour {
         if (movementMode != -1)
         {
             //progressbar
-            GUI.Label(new Rect(x, y, 120, 20), "Progress: 0" + progress.ToString("#.##"));
-            progressOffset = GUI.HorizontalSlider(new Rect(x, y + 20, 300, 10), progressOffset, -1.0f, 1.0f);
+            GUI.Label(new Rect(x, y, 120, 20), "Progress: " + progressMng.getProgress().ToString("#.##"));
+            progressMng.prog_offset = GUI.HorizontalSlider(new Rect(x, y + 20, 300, 10),progressMng.prog_offset, -1.01f, 1.01f);
 
             //speed slider
             GUI.Label(new Rect(x, y + 40, 120, 20), "Speed: " + speed.ToString(CultureInfo.InvariantCulture));
