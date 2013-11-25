@@ -28,6 +28,7 @@ public class PlayerController : MonoBehaviour {
 	private GameObject groundTile;
 	private bool isSitting=false;
 	private int movementMode = -1;
+	protected Animator animator;
 	// interactive stuff
 	private float progress=0.0f;
 	private bool sit = false;
@@ -46,9 +47,9 @@ public class PlayerController : MonoBehaviour {
 	private float duration = 1.0f;
 	private float elapsedTime = 0.0f;
 	// Meshes
-	private GameObject sittingPlayerMesh;
-	private GameObject standingPlayerMesh;
-	private GameObject deadPlayerMesh;
+	//private GameObject sittingPlayerMesh;
+	//private GameObject standingPlayerMesh;
+	//private GameObject deadPlayerMesh;
 	public SphereCollider collisionHelper;
 	private List<SphereCollider> collidingObj;
 	//Sounds
@@ -68,7 +69,7 @@ public class PlayerController : MonoBehaviour {
 	{
 		//groundGen = this.GetComponent<GroundGen>;
 		inRangeElements = new List<InteractBehaviour>();
-		
+		animator = transform.FindChild("animation-picking").GetComponent<Animator>();
 		groundTile = GameObject.Find("GroundTile");
 		progressMng = (ProgressManager)GameObject.Find("Progression").GetComponent("ProgressManager");
 		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
@@ -84,13 +85,6 @@ public class PlayerController : MonoBehaviour {
 		// find camera
 		isoCam = GameObject.Find("IsoCamera").camera;
 		background = isoCam.backgroundColor;
-		// find meshes		
-		deadPlayerMesh= transform.FindChild("player_dead").gameObject;
-		deadPlayerMesh.SetActive(false);
-		sittingPlayerMesh = transform.FindChild("player_sitting").gameObject;
-		sittingPlayerMesh.SetActive(false);
-		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
-		standingPlayerMesh.SetActive(true);		
 		// set to no collisions with pebbles (via Layers)		
 		SetLayerRecursively(gameObject,(int)(LayerList.ignorePebbleCollision)); // ignorePebbleCollision
 		// colliding stuffs
@@ -122,8 +116,7 @@ public class PlayerController : MonoBehaviour {
 				gui.doneSit();
 				//sit down
 				currSittingTime = 0.0f;
-				sittingPlayerMesh.SetActive(true);
-				standingPlayerMesh.SetActive(false);
+				animator.SetBool("sitting", true );
 				//change the carrying position when sitting down
 				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,-0.15f,0.0f);
 				isSitting = true;
@@ -134,8 +127,8 @@ public class PlayerController : MonoBehaviour {
 			{
 				gui.doneStandingUp();
 				//stand up again
-				sittingPlayerMesh.SetActive(false);
-				standingPlayerMesh.SetActive(true);
+				
+				animator.SetBool("sitting", false );
 				//change the carrying position when standing up again
 				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,+0.15f,0.0f);
 				StopSittingSound(currSittingTime);
@@ -150,6 +143,7 @@ public class PlayerController : MonoBehaviour {
 			InteractBehaviour closest = FindClosestInteractable();
 			if( closest != null) 
 	        {
+				animator.SetBool("picking", true );
 				CarryObject co = closest.activate(progress);
                 PickUpObject(co);
 				gui.doneInteract();
@@ -184,9 +178,21 @@ public class PlayerController : MonoBehaviour {
 		DisplayInteractionTooltip();		
 
 	    BunnyCheck();
+		animationHandling();
 	}
-
-    private void BunnyCheck()
+	private void animationHandling()
+	{
+		AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+		if(stateInfo.nameHash == Animator.StringToHash("Base Layer.picking"))
+		{
+			animator.SetBool("picking", false );
+		}
+		else if(stateInfo.nameHash == Animator.StringToHash("Base Layer.kicking"))
+		{
+			animator.SetBool("kicking", false );
+		}
+	}
+	private void BunnyCheck()
     {
         foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
         {
@@ -639,9 +645,8 @@ public class PlayerController : MonoBehaviour {
 	{
 		dead = true;
 		// change mesh to lying 
-		sittingPlayerMesh.SetActive(false);
-		standingPlayerMesh.SetActive(false);
-		deadPlayerMesh.SetActive(true);
+		
+		animator.SetBool("dead", false );
 		// start Death sounds
 		PlayDeathSound();
 		// clean the interaction Tooltip text
