@@ -4,6 +4,11 @@ using System.Collections;
 public enum Tutorials {none,move,sit,standup,interact,follow};
 
 public class TutorialGui : MonoBehaviour {
+	public string[] TutorialStrings = {"",	"Press <b>ArrowKeys</b> to move.",
+										  	"Press <b>Q</b> to sit.",
+											"Press <b>Q</b> to stand up again.",
+											"Press <b>E</b> to interact.",
+											"Follow the <b>rabbits</b>."};
 	// gui bools
 	private bool tutMoveDone=false;
 	private bool tutSitDone=false;
@@ -12,12 +17,25 @@ public class TutorialGui : MonoBehaviour {
 	private bool tutFollowDone=true;// QUICK FIX to not show the last tutorial
 	
 	private const float DELAY_TIME=2.5f;
+	private const float FADE_TIME=2.5f;
+	private const float DARKOVERLAY_ALPHA=0.3f;
 	private GameObject credits;
-	
+	private GUIText textOverlay;
+	private GameObject darkOverlay;
 	private GameObject currObj;
 	private Tutorials currType;
+	private bool shown = true;
+	private bool fade = false;
+	private float currentTime=0.0f;
 	void Awake()
 	{
+		textOverlay = transform.FindChild("TextOverlay").gameObject.transform.FindChild("Text").guiText;
+		darkOverlay = transform.FindChild("TextOverlay").gameObject.transform.FindChild("DarkOverlay").gameObject;
+		fade = true;
+		//textOverlay.SetActive(false);
+		//Color test = new Color(0.0f,0.0f,0.0f,0.1f);
+		//textOverlay.transform.FindChild("DarkOverlay").gameObject.renderer.material.color = test;
+		resetTextOverlay("Press <b>E</b> to.");
 		transform.FindChild("tut_sit").gameObject.SetActive(false);
 		transform.FindChild("tut_standup").gameObject.SetActive(false);
 		transform.FindChild("tut_interact").gameObject.SetActive(false);
@@ -29,6 +47,66 @@ public class TutorialGui : MonoBehaviour {
 		
 		credits = GameObject.Find("GUI").transform.FindChild("Credits").gameObject;
 		credits.SetActive(false);
+	}
+	private void resetTextOverlay( string inStr )
+	{
+		textOverlay.text = inStr;
+		GUIStyle style = new GUIStyle();
+		style.font = textOverlay.font;
+		
+		Vector2 size = style.CalcSize(new GUIContent(textOverlay.text));
+		Vector3 overlayScale = darkOverlay.transform.localScale;
+		overlayScale.x  = size.x *0.00322f;
+		darkOverlay.transform.localScale = overlayScale;
+	}
+	void Update()
+	{
+		if( fade )
+		{
+			currentTime += Time.deltaTime;
+			if (shown) // fade out
+			{
+				fadeOutOverlay();
+			}
+			else if( !shown) // fade in
+			{
+				fadeInOverlay();
+			}
+		}
+	}
+	private void fadeOutOverlay()
+	{
+		float percent = (currentTime / FADE_TIME);
+		if( percent > 1.0f)
+		{
+			percent = 1.0f;
+			fade = false;
+			shown = false;
+		}
+		// DARKOVERLAY FADE OUT
+		Color newDoColor = new Color(0.0f,0.0f,0.0f,DARKOVERLAY_ALPHA*(1.0f-percent));
+		darkOverlay.renderer.material.color = newDoColor;
+		// TEXT FADE OUT
+		Color newTextColor = new Color(1.0f,1.0f,1.0f,(1.0f-percent));
+		textOverlay.color = newTextColor;
+
+	}
+	private void fadeInOverlay()
+	{
+		float percent = (currentTime / FADE_TIME);
+		if( percent > 1.0f)
+		{
+			percent = 1.0f;
+			fade = false;
+			shown = true;
+		}
+		// DARKOVERLAY FADE OUT
+		Color newDoColor = new Color(0.0f,0.0f,0.0f,DARKOVERLAY_ALPHA*(percent));
+		Debug.Log( newDoColor.ToString());
+		darkOverlay.renderer.material.color = newDoColor;
+		// TEXT FADE OUT
+		Color newTextColor = new Color(1.0f,1.0f,1.0f,percent);
+		textOverlay.color = newTextColor;
 	}
 	public void doneMove(){ tutMoveDone=true; fadeOut(Tutorials.move);}
 	public void doneSit(){ tutSitDone = true;fadeOut(Tutorials.sit); }

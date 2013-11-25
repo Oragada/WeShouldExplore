@@ -94,7 +94,6 @@ public class ProgressManager : MonoBehaviour {
 		// find 2 closest points in the array
 		Vector2 lower = inVal[0];
 		Vector2 higher = inVal[inVal.Length-1];
-		Debug.Log (lower.ToString()+" "+higher.ToString());
 		foreach( Vector2 p in inVal)
 		{	
 			if( p.x == inProgress)

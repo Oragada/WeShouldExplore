@@ -578,7 +578,7 @@ public class PlayerController : MonoBehaviour {
 		if( closest != null) 
         {
 			if (closest.customInteractiveText() != null)
-				interactionTooltip.text = "Press E "+closest.customInteractiveText();
+				interactionTooltip.text = "Press <b>E</b> "+closest.customInteractiveText();
 		}				
 	}
 	public void channeledTriggerExit(Collider other)
