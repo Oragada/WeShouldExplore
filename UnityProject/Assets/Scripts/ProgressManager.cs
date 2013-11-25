@@ -57,8 +57,15 @@ public class ProgressManager : MonoBehaviour {
 			case Values.Alpha:
 		        return Mathf.Min(1.0f, 0.3f+progress*5.0f);
 		        break;
-		    case Values.Speed:		        
-				return Mathf.Max(20.0f, 45.0f - (progress*40.0f));
+		    case Values.Speed:		
+			
+				Vector2[] speedValues = {
+					new Vector2(0.0f, 45.0f), //fast in the beginning
+					new Vector2(0.25f, 30.0f), //constant in the middle
+					new Vector2(0.75f, 30.0f), //constant in the middle
+					new Vector2(1.0f, 20.0f) //slow in the end
+				};
+				return multipointInterpolation(speedValues,progress);
 		        break;
 			case Values.InertiaDuration:
 		        return Mathf.Max(0.0f, 1.0f - progress*10.0f);
@@ -70,10 +77,10 @@ public class ProgressManager : MonoBehaviour {
 		        return Mathf.Min(1.0f, -0.4f*progress+0.5f);
 		        break;	
 			case Values.BackgroundColorFactor:
-				return Mathf.Min(1.0f,(1.0f - (progress))/0.1f);
+				return linearInterpolationBetween(1.0f,0.9f,progress);
 				break;	
 			case Values.CollisionSizePercent: // 0.25 = zero, 0.5 = one
-				return Mathf.Max(0.0f, Mathf.Min(1.0f, (progress-0.25f)/0.25f));
+				return linearInterpolationBetween(0.20f,0.5f,progress);
 				break;	
 		    default:
 		        Debug.Log("unknown Value");
@@ -81,5 +88,34 @@ public class ProgressManager : MonoBehaviour {
 		}		
 		
 		return progress;
+	}
+	public float multipointInterpolation(Vector2[] inVal, float inProgress) 
+	{
+		// find 2 closest points in the array
+		Vector2 lower = inVal[0];
+		Vector2 higher = inVal[inVal.Length-1];
+		Debug.Log (lower.ToString()+" "+higher.ToString());
+		foreach( Vector2 p in inVal)
+		{	
+			if( p.x == inProgress)
+			{
+				return p.y;
+			}		
+			if( p.x > lower.x && p.x < inProgress)
+			{
+				lower = p;
+			}
+			if( p.x < higher.x && p.x > inProgress)
+			{
+				higher = p;
+			}
+		}
+		float tmp = linearInterpolationBetween(lower.x, higher.x, inProgress);
+
+		return lower.y*(1-tmp) + higher.y*(tmp);
+	}
+	public float linearInterpolationBetween( float zeroTill, float oneAt, float t)
+	{
+		return Mathf.Max(0.0f, Mathf.Min(1.0f,(t-zeroTill) / (oneAt-zeroTill)));
 	}
 }

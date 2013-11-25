@@ -406,7 +406,8 @@ public class PlayerController : MonoBehaviour {
 	private Vector3 checkForCollisions(Direction moved)
 	{
 		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
-		if (progressMng.getValue(ProgressManager.Values.CollisionSizePercent) == 0.0f) // do not compute collisions when the CollisionSizePercent is zero
+		float collSizePercent = progressMng.getValue(ProgressManager.Values.CollisionSizePercent);
+		if (collSizePercent == 0.0f) // do not compute collisions when the CollisionSizePercent is zero
 			return ret;
 		foreach( SphereCollider enemy in collidingObj)
 		{
@@ -414,13 +415,14 @@ public class PlayerController : MonoBehaviour {
 			Vector3 dif = collisionHelper.transform.position - enemy.transform.position;
 			// ignore Y-difference
 			dif.y = 0.0f;
-			//Debug.Log( "Dif: "+ dif.ToString()+ " Coll Size percent: "+progressMng.getValue(ProgressManager.Values.CollisionSizePercent));
-			dif *= progressMng.getValue(ProgressManager.Values.CollisionSizePercent);
-			// convert the collision-vector to local space, because player rotates in the movementfunction
-			dif = transform.InverseTransformDirection(dif);	
-    		// offset the player frame & speed independent 
-			// *0.7f makes sure that diagonal movement should be save ( 1 / sqrt(2) )
-			ret.Set((dif.x)/(Time.deltaTime*speed*1.0f), ret.y,(dif.z)/(Time.deltaTime*speed*1.0f));
+			if(((collisionHelper.radius + enemy.radius)*collSizePercent) > dif.magnitude)
+			{
+				// convert the collision-vector to local space, because player rotates in the movementfunction
+				dif = transform.InverseTransformDirection(dif);	
+	    		// offset the player frame & speed independent 
+				// *0.7f makes sure that diagonal movement should be save ( 1 / sqrt(2) )
+				ret.Set((dif.x)/(Time.deltaTime*speed*1.0f), ret.y,(dif.z)/(Time.deltaTime*speed*1.0f));
+			}
 		}			
 		return ret;
 	}	
