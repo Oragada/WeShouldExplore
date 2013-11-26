@@ -589,64 +589,6 @@ ModelImporter:
         weight: 1
       maskType: 0
       maskSource: {instanceID: 0}
-    - serializedVersion: 16
-      name: Lying
-      takeName: Take 001
-      firstFrame: 348
-      lastFrame: 349
-      wrapMode: 0
-      orientationOffsetY: 0
-      level: 0
-      cycleOffset: 0
-      loop: 0
-      loopTime: 0
-      loopBlend: 0
-      loopBlendOrientation: 0
-      loopBlendPositionY: 0
-      loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
-      keepOriginalPositionY: 1
-      keepOriginalPositionXZ: 0
-      heightFromFeet: 0
-      mirror: 0
-      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
-      curves: []
-      events: []
-      transformMask:
-      - path: 
-        weight: 1
-      - path: Bone001
-        weight: 1
-      - path: Bone001/Bone002
-        weight: 1
-      - path: Bone001/Bone002/Bone003
-        weight: 1
-      - path: Bone001/Bone002/Bone003/Bone004
-        weight: 1
-      - path: Bone001/Bone002/Bone003/Bone004/Bone005
-        weight: 1
-      - path: IK Chain001
-        weight: 1
-      - path: IK Chain002
-        weight: 1
-      - path: IK Chain004
-        weight: 1
-      - path: IK Chain005
-        weight: 1
-      - path: IK Chain006
-        weight: 1
-      - path: player_standing
-        weight: 1
-      - path: player_standing/GeoSphere001
-        weight: 1
-      - path: player_standing/GeoSphere003
-        weight: 1
-      - path: player_standing001
-        weight: 1
-      - path: player_standing002
-        weight: 1
-      maskType: 0
-      maskSource: {instanceID: 0}
     isReadable: 1
   meshes:
     lODScreenPercentages: []
