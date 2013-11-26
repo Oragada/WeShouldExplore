@@ -185,10 +185,6 @@ public class PlayerController : MonoBehaviour {
 	{
 		AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 		AnimatorStateInfo nextStateInfo = animator.GetNextAnimatorStateInfo(0);
-		Debug.Log("currState: "+stateInfo.nameHash.ToString());
-		Debug.Log("nextState: "+nextStateInfo.nameHash.ToString());
-		//Debug.Log("Standing" + Animator.StringToHash("Base Layer.Standing").ToString());
-		//Debug.Log("AnyState" + Animator.StringToHash("Base Layer.AnyState").ToString());/**/
 		if(stateInfo.nameHash == Animator.StringToHash("Base.Picking"))
 		{
 			animator.SetBool("picking", false );
@@ -201,7 +197,6 @@ public class PlayerController : MonoBehaviour {
 		{
 			animator.SetBool("dead", false);
 		}
-		//animator.SetBool("dead", false );
 	}
 	private void BunnyCheck()
     {
