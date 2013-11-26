@@ -69,7 +69,7 @@ public class PlayerController : MonoBehaviour {
 	{
 		//groundGen = this.GetComponent<GroundGen>;
 		inRangeElements = new List<InteractBehaviour>();
-		animator = transform.FindChild("animation-picking").GetComponent<Animator>();
+		animator = transform.FindChild("animations").GetComponent<Animator>();
 		groundTile = GameObject.Find("GroundTile");
 		progressMng = (ProgressManager)GameObject.Find("Progression").GetComponent("ProgressManager");
 		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
@@ -144,6 +144,7 @@ public class PlayerController : MonoBehaviour {
 			if( closest != null) 
 	        {
 				animator.SetBool("picking", true );
+
 				CarryObject co = closest.activate(progress);
                 PickUpObject(co);
 				gui.doneInteract();
@@ -183,14 +184,24 @@ public class PlayerController : MonoBehaviour {
 	private void animationHandling()
 	{
 		AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-		if(stateInfo.nameHash == Animator.StringToHash("Base Layer.picking"))
+		AnimatorStateInfo nextStateInfo = animator.GetNextAnimatorStateInfo(0);
+		Debug.Log("currState: "+stateInfo.nameHash.ToString());
+		Debug.Log("nextState: "+nextStateInfo.nameHash.ToString());
+		//Debug.Log("Standing" + Animator.StringToHash("Base Layer.Standing").ToString());
+		//Debug.Log("AnyState" + Animator.StringToHash("Base Layer.AnyState").ToString());/**/
+		if(stateInfo.nameHash == Animator.StringToHash("Base.Picking"))
 		{
 			animator.SetBool("picking", false );
 		}
-		else if(stateInfo.nameHash == Animator.StringToHash("Base Layer.kicking"))
+		else if(stateInfo.nameHash == Animator.StringToHash("Base.Kicking"))
 		{
 			animator.SetBool("kicking", false );
 		}
+		else if(stateInfo.nameHash == Animator.StringToHash("Base.Dying"))
+		{
+			animator.SetBool("dead", false);
+		}
+		//animator.SetBool("dead", false );
 	}
 	private void BunnyCheck()
     {
@@ -298,7 +309,7 @@ public class PlayerController : MonoBehaviour {
 		isoCam.backgroundColor = new Color ( background.r*lower , background.g*lower, background.b*lower, 1.0f);
 	
 		// he dies at progress 1.0f
-		if (progress > 1.0f)
+		if (progress > 1.0f && !dead)
 		{
 			Die();
 		}
@@ -645,8 +656,8 @@ public class PlayerController : MonoBehaviour {
 	{
 		dead = true;
 		// change mesh to lying 
-		
-		animator.SetBool("dead", false );
+		Debug.Log ("die only once.");
+		animator.SetBool("dead", true );
 		// start Death sounds
 		PlayDeathSound();
 		// clean the interaction Tooltip text

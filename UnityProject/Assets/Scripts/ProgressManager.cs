@@ -25,7 +25,7 @@ public class ProgressManager : MonoBehaviour {
 	{
 		//Debug.Log ( "progress: "+progress+" totalSittingTime:"+totalSittingTime+" nearInteractionCounter:"+nearInteractionCounter+" totalTilesTraveled:" + totalTilesTraveled+" offset:"+prog_offset);
 		progress = ((Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f)+prog_offset;
-		progress += Mathf.Log10( totalTilesTraveled + 1)*0.1f;
+		progress += Mathf.Log10( totalTilesTraveled + 1)*0.025f;
 		progress = Mathf.Max(0.0f, Mathf.Min(1.01f, progress));		
 	}
 	public float getProgress()
