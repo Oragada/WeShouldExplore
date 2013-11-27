@@ -14,7 +14,7 @@ namespace Assets.Scripts.InteractableBehaviour
         void Awake()
         {
             Component head = GetGhildComponent("Head");
-            head.renderer.material.color = colors[1];
+            head.renderer.material.color = colors[0];
             //SphereCollider trigger = GetComponent<SphereCollider>();
             //trigger.radius = triggerRadius;
             //rigidbody.isKinematic = true;
@@ -22,7 +22,7 @@ namespace Assets.Scripts.InteractableBehaviour
 
         public override CarryObject activate(float playerProgress)
         {
-            if (!flowerPicked)
+            if (!flowerPicked && playerProgress > 0.1f)
             {
                 //isActive = !isActive;
                 flowerPicked = true;
