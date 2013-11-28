@@ -3,9 +3,9 @@ using System.Linq;
 
 namespace Assets.Scripts.InteractableBehaviour
 {
-    public class FlowerBehaviour : InteractBehaviour {
+    public class FlowerBehaviour : InteractableBehaviour {
 
-        private bool isActive = false;
+        //private bool isActive = false;
 
         bool flowerPicked;
 
@@ -20,7 +20,7 @@ namespace Assets.Scripts.InteractableBehaviour
             //rigidbody.isKinematic = true;
         }
 
-        public override CarryObject activate(float playerProgress)
+        public override CarryObject Activate(float playerProgress, Vector3 playerPos)
         {
             if (!flowerPicked && playerProgress > 0.1f)
             {

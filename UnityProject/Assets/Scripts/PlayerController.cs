@@ -31,10 +31,10 @@ public class PlayerController : MonoBehaviour {
 	protected Animator animator;
 	// interactive stuff
 	private float progress=0.0f;
-	private bool sit = false;
-	private bool interact = false;
+	////private bool sit = false;
+    ////private bool interact = false;
 	private bool dead = false;
-    private List<InteractBehaviour> inRangeElements;
+    private List<ActableBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
 	private const float THRESH_FOR_PEBBLE_KICKING = 0.1f;
 	private const float THRESH_FOR_TRUE_INTERACTION_TO_COUNT = 0.1f;
@@ -64,11 +64,15 @@ public class PlayerController : MonoBehaviour {
 	// Debug
 	private bool fadeOut=false;
 	private float fadeOutFactor=0.2f;
+    //Currently Pressing Sit & Interact
+    private bool currentPressSit = false;
+    private bool currentPressInteract = false;
+
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
 		//groundGen = this.GetComponent<GroundGen>;
-		inRangeElements = new List<InteractBehaviour>();
+		inRangeElements = new List<ActableBehaviour>();
 		animator = transform.FindChild("animations").GetComponent<Animator>();
 		groundTile = GameObject.Find("GroundTile");
 		progressMng = (ProgressManager)GameObject.Find("Progression").GetComponent("ProgressManager");
@@ -90,9 +94,8 @@ public class PlayerController : MonoBehaviour {
 		// colliding stuffs
         collisionHelper = transform.FindChild("ObstacleCollider").gameObject.GetComponent<SphereCollider>();
 		collidingObj = new List<SphereCollider>();
-	}	
+	}
 
-	
 	void Update () {
 		if (dead)
 			return;
@@ -103,63 +106,12 @@ public class PlayerController : MonoBehaviour {
 		// changed the Axis gravity&sensitivity to 1000, for more direct input.
 		// for joystick usage however Vince told me to:
 		/* just duplicate Horizontal and use gravity 1, dead 0.2 and sensitivity 1 that it works*/		
-        sit = Input.GetButtonDown("Sit");
-		interact = Input.GetButtonDown("Interact");
+        ////sit = Input.GetButtonDown("Sit");
+		////interact = Input.GetButtonDown("Interact");
 		
 		checkProgress();
-		
-		if( sit )
-		{
-			if(!isSitting) 
-			{
-				// hide how to sit in the gui
-				gui.doneSit();
-				//sit down
-				currSittingTime = 0.0f;
-				animator.SetBool("sitting", true );
-				//change the carrying position when sitting down
-				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,-0.15f,0.0f);
-				isSitting = true;
-				PlaySittingSound();
-				elapsedTime = duration;
-			}
-			else
-			{
-				gui.doneStandingUp();
-				//stand up again
-				
-				animator.SetBool("sitting", false );
-				//change the carrying position when standing up again
-				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,+0.15f,0.0f);
-				StopSittingSound(currSittingTime);
-				isSitting = false;
-				progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, currSittingTime);
-				currSittingTime = 0.0f;
-			}
-		}	
-		
-		if( interact )
-        {
-			InteractBehaviour closest = FindClosestInteractable();
-			if( closest != null) 
-	        {
-				animator.SetBool("picking", true );
 
-				CarryObject co = closest.activate(progress);
-                PickUpObject(co);
-				gui.doneInteract();
-				if( progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
-					progressMng.usedMechanic( ProgressManager.Mechanic.Interaction );					
-			}	
-		}
-		else
-		{ 
-			// show in the gui what will happen on the "E" button
-			/*if( inRangeElements.Count > 0)
-			{
-				Debug.Log ( inRangeElements[0].getInteractiveText() );
-			}*/
-		}
+        Action();
 				
         if( Input.GetButtonDown("ToggleMovementMode"))
 		{	movementMode++;
@@ -178,9 +130,80 @@ public class PlayerController : MonoBehaviour {
 		FadeSounds(Time.deltaTime);		
 		DisplayInteractionTooltip();		
 
-	    BunnyCheck();
+	    React();
 		animationHandling();
-	}
+    }
+
+    void Action()
+    {
+        bool pressInteract = Input.GetButton("Interact");
+        if (pressInteract & !currentPressInteract)
+        {
+            Interact();
+            currentPressInteract = true;
+        }
+        else if (!pressInteract & currentPressInteract)
+        {
+            currentPressInteract = false;
+        }
+        bool pressSit = Input.GetButton("Sit");
+        if (pressSit & !currentPressSit)
+        {
+            Sit();
+            currentPressSit = true;
+        }
+        else if (!pressSit & currentPressSit)
+        {
+            currentPressSit = false;
+        }
+
+    }
+
+    void Sit()
+    {
+        if (!isSitting)
+        {
+            // hide how to sit in the gui
+            gui.doneSit();
+            //sit down
+            currSittingTime = 0.0f;
+            animator.SetBool("sitting", true);
+            //change the carrying position when sitting down
+            transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f, -0.15f, 0.0f);
+            isSitting = true;
+            PlaySittingSound();
+            elapsedTime = duration;
+        }
+        else
+        {
+            gui.doneStandingUp();
+            //stand up again
+
+            animator.SetBool("sitting", false);
+            //change the carrying position when standing up again
+            transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f, +0.15f, 0.0f);
+            StopSittingSound(currSittingTime);
+            isSitting = false;
+            progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, currSittingTime);
+            currSittingTime = 0.0f;
+        }
+    }
+
+    void Interact()
+    {
+        InteractableBehaviour closest = FindClosestInteractable();
+        if (closest != null)
+        {
+            animator.SetBool("picking", true);
+
+            CarryObject co = closest.Activate(progress, ToPlayerPos(closest));
+            PickUpObject(co);
+            gui.doneInteract();
+            if (progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
+                progressMng.usedMechanic(ProgressManager.Mechanic.Interaction);
+        }
+    }
+
 	private void animationHandling()
 	{
 		AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
@@ -203,17 +226,21 @@ public class PlayerController : MonoBehaviour {
 		}
 		//animator.SetBool("dead", false );
 	}
-	private void BunnyCheck()
+	
+    private void React()
     {
-        foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
-        {
-            var rabbit = rab;
-            Vector3 toPlayerVec = (transform.position - rabbit.transform.position);
-            toPlayerVec.y *= 0;
-            //toRabVec.Normalize();
-            rabbit.PlayerPos = toPlayerVec;
-            rabbit.activate(progress);
-        }
+        inRangeElements.OfType<ReactableBehaviour>().ToList().ForEach(e => e.React(progress, ToPlayerPos(e)));
+        //foreach (ReactableBehaviour reactable in inRangeElements.OfType<ReactableBehaviour>())
+        //{
+        //    reactable.React(progress, ToPlayerPos(reactable));
+        //}
+    }
+
+    private Vector3 ToPlayerPos(ActableBehaviour actable)
+    {
+        Vector3 toPlayerVec = (transform.position - actable.transform.position);
+        toPlayerVec.y *= 0;
+        return toPlayerVec;
     }
 
     public void PickUpObject(CarryObject pickedObject)
@@ -539,7 +566,7 @@ public class PlayerController : MonoBehaviour {
 					collidingObj.Add( colli.GetComponent<SphereCollider>() );				
 			}
 			
-			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
+			ActableBehaviour addThis = other.GetComponent<ActableBehaviour>();
 
             /*if (addThis.GetType() == typeof (RabbitGroupBehavior))
             {
@@ -567,42 +594,52 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 	}
-	private InteractBehaviour FindClosestInteractable()
+	private InteractableBehaviour FindClosestInteractable()
 	{
-		if( inRangeElements.Count < 1)
+	    List<InteractableBehaviour> intera = inRangeElements.Where(e => e is InteractableBehaviour).Cast<InteractableBehaviour>().ToList();
+		if( intera.Count < 1)
 			return null;
-		InteractBehaviour ret = inRangeElements[0];
-		float dist = Vector3.Distance(transform.position, inRangeElements[0].transform.position);
-		if( inRangeElements.Count == 1)
-			return ret;
-		foreach (InteractBehaviour i in inRangeElements)
-        {
-			if( dist > Vector3.Distance(transform.position, i.transform.position))
-			{
-				dist = Vector3.Distance(transform.position, i.transform.position);
-				ret = i;
-			}
-		}
-		return ret;
+        //Slightly clunky
+	    return intera.First(
+	            e =>
+	            Vector3.Distance(transform.position, e.transform.position) <=
+	            intera.Min(f => Vector3.Distance(transform.position, f.transform.position)));
+
+		//ActableBehaviour ret = intera[0];
+		//float dist = Vector3.Distance(transform.position, inRangeElements[0].transform.position);
+		//if( inRangeElements.Count == 1)
+        //    return ret;
+        //foreach (ActableBehaviour i in inRangeElements)
+        //{
+        //    if( dist > Vector3.Distance(transform.position, i.transform.position))
+        //    {
+        //        dist = Vector3.Distance(transform.position, i.transform.position);
+        //        ret = i;
+        //    }
+        //}
+        //return ret;
+
 	}
+
 	private void DisplayInteractionTooltip()
 	{
 		if ( dead )
 			return;
 		
 		interactionTooltip.text = "";
-		InteractBehaviour closest = FindClosestInteractable();
+		InteractableBehaviour closest = FindClosestInteractable();
 		if( closest != null) 
         {
 			if (closest.customInteractiveText() != null)
 				interactionTooltip.text = "Press <b>E</b> "+closest.customInteractiveText();
 		}				
 	}
-	public void channeledTriggerExit(Collider other)
+	
+    public void channeledTriggerExit(Collider other)
 	{
 		if( other.gameObject.tag == "Interactable")
 		{
-            InteractBehaviour removeThis = other.GetComponent<InteractBehaviour>();
+            ActableBehaviour removeThis = other.GetComponent<ActableBehaviour>();
             if (removeThis.GetType() == typeof(RabbitGroupBehavior))
             {
                 ((RabbitGroupBehavior)removeThis).Deactivate();
@@ -640,9 +677,9 @@ public class PlayerController : MonoBehaviour {
 
             //in range elements count
             GUI.Label(new Rect(x, y + 220, 100, 20), "Debug:");
-            //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
+            GUI.Label(new Rect(x, y + 240, 200, 20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
             //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements.OfType<RabbitGroupBehavior>().Count().ToString(CultureInfo.InvariantCulture));
-            GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
+            //GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
 
             if (test > 1.5f)
                 movementMode = 2;
