@@ -520,7 +520,13 @@ public class PlayerController : MonoBehaviour {
 			// update tile, pass the direction along
 			groundTile.GetComponent<GroundGen>().showNextTile(dir);
 			gui.doneFollow();
+			if( gui.firstTileDone() )
+				gui.doneSecondTile();
+			else 
+				gui.doneFirstTile();
+
 			progressMng.usedMechanic(ProgressManager.Mechanic.Travel);
+
 			//groundTile.GetComponent<GroundGen>().
 			setPlayersYPosition();
 		}
