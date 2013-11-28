@@ -39,16 +39,11 @@ public class TutorialGui : MonoBehaviour {
 	private Tutorials nextTut = Tutorials.none;
 	private Tutorials currTut = Tutorials.move;
 	void Awake()
-	{
+	{		
 		textOverlay = transform.FindChild("TextOverlay").gameObject.transform.FindChild("Text").guiText;
 		darkOverlay = transform.FindChild("TextOverlay").gameObject.transform.FindChild("DarkOverlay").guiTexture;
-		resetTextOverlay(TutorialDescriptions[(int)currTut]);
-
-		// start with movement		
-		currTut = Tutorials.move;		
-		
-		credits = GameObject.Find("GUI").transform.FindChild("Credits").gameObject;
-		credits.SetActive(false);
+		credits = transform.FindChild("Credits").gameObject;
+		Restart();
 	}
 	private void resetTextOverlay( string inStr )
 	{
@@ -94,6 +89,28 @@ public class TutorialGui : MonoBehaviour {
 				doneTutorial();
 		}
 	}
+	public void Restart()
+	{
+		tutMoveDone=false;
+		tutSitDone=false;
+		tutStandUpDone=false;
+		tutInteractDone=false;
+		tutFollowDone=true;// QUICK FIX to not show the last tutorial
+		tutFirstTileDone=false;//
+		tutSecondFirstTileDone=false;//
+		tutDone=false;//
+		
+		shown = true;
+		fade = false;
+		currentTime=0.0f;
+		fadeOutEndTutorial=5.0f;
+		
+		nextTut = Tutorials.none;
+		currTut = Tutorials.move;
+		credits.SetActive(false);
+		resetTextOverlay(TutorialDescriptions[(int)currTut]);
+	}
+
 	private void fadeOutOverlay()
 	{
 		float percent = (currentTime / FADE_TIME);

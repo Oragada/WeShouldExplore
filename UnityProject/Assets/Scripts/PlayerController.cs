@@ -105,7 +105,7 @@ public class PlayerController : MonoBehaviour {
 		/* just duplicate Horizontal and use gravity 1, dead 0.2 and sensitivity 1 that it works*/		
         sit = Input.GetButtonDown("Sit");
 		interact = Input.GetButtonDown("Interact");
-		
+
 		checkProgress();
 		
 		if( sit )
