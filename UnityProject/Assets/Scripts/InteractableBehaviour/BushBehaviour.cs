@@ -2,7 +2,7 @@
 
 namespace Assets.Scripts.InteractableBehaviour
 {
-    public class BushBehaviour : InteractBehaviour {
+    public class BushBehaviour : InteractableBehaviour {
 
         //private Color inactiveColor;
         //private Color activeColor;
@@ -17,7 +17,7 @@ namespace Assets.Scripts.InteractableBehaviour
             SphereCollider trigger = GetComponentInChildren<SphereCollider>();
             trigger.radius = triggerRadius;
         }
-        public override CarryObject activate(float playerProgress)
+        public override CarryObject Activate(float playerProgress, Vector3 playerPos)
         {
             //isActive = !isActive;
             //Component bush = GetGhildComponent("BushObject");

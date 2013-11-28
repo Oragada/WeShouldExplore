@@ -5,7 +5,7 @@ using System.Linq;
 
 public enum RabbitBehaviour{Ignore, Observe, Move, Flee}
 
-public class RabbitGroupBehavior : InteractBehaviour
+public class RabbitGroupBehavior : ReactableBehaviour
 {
 	public RabbitBehaviour Behaviour; //{ get; private set; }
     public Vector3 PlayerPos; // { get; set; }
@@ -79,39 +79,33 @@ public class RabbitGroupBehavior : InteractBehaviour
 		transform.position += (move * CurrentSpeed * Time.deltaTime);
 	}
 
-	public override CarryObject activate(float playerProgress)
-	{
-		PlayerInRange = true;
-
-		if (playerProgress < 0.1f)
-		{
-			Behaviour = RabbitBehaviour.Ignore;
-		}
-		else if (playerProgress < 0.3f)
-		{
-			Behaviour = RabbitBehaviour.Observe;
-		}
-		else if(playerProgress < 0.7f)
-		{
-			Behaviour = RabbitBehaviour.Move;
-		}
-		else
-		{
-			Behaviour = RabbitBehaviour.Flee;
-		}
-
-
-		return CarryObject.Nothing;
-	}
-
 	public void Deactivate()
 	{
 		//GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Deactivate(Behaviour));
 		PlayerInRange = false;
 
 	}
-    public override string customInteractiveText()
+
+    public override void React(float playerProgress, Vector3 playerPos)
     {
-        return null;
+        PlayerInRange = true;
+        PlayerPos = playerPos;
+
+        if (playerProgress < 0.1f)
+        {
+            Behaviour = RabbitBehaviour.Ignore;
+        }
+        else if (playerProgress < 0.3f)
+        {
+            Behaviour = RabbitBehaviour.Observe;
+        }
+        else if (playerProgress < 0.7f)
+        {
+            Behaviour = RabbitBehaviour.Move;
+        }
+        else
+        {
+            Behaviour = RabbitBehaviour.Flee;
+        }
     }
 }

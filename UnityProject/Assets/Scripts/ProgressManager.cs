@@ -56,7 +56,6 @@ public class ProgressManager : MonoBehaviour {
 		{
 			case Values.Alpha:
 		        return Mathf.Min(1.0f, 0.3f+progress*5.0f);
-		        break;
 		    case Values.Speed:		
 			
 				Vector2[] speedValues = {
@@ -66,22 +65,16 @@ public class ProgressManager : MonoBehaviour {
 					new Vector2(1.0f, 20.0f) //slow in the end
 				};
 				return multipointInterpolation(speedValues,progress);
-		        break;
 			case Values.InertiaDuration:
 		        return Mathf.Max(0.0f, 1.0f - progress*10.0f);
-		        break;	
 			case Values.InertiaDistance:
 		        return Mathf.Max(0.0f, 0.1f - progress);
-		        break;		    
 			case Values.GreyPlayerColor:			
 		        return Mathf.Min(1.0f, -0.4f*progress+0.5f);
-		        break;	
 			case Values.BackgroundColorFactor:
 				return linearInterpolationBetween(1.0f,0.9f,progress);
-				break;	
 			case Values.CollisionSizePercent: // 0.25 = zero, 0.5 = one
 				return linearInterpolationBetween(0.20f,0.5f,progress);
-				break;	
 		    default:
 		        Debug.Log("unknown Value");
 		        break;
