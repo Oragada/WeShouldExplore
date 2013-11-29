@@ -22,14 +22,14 @@ public class RabbitMovement : MonoBehaviour
 
 	}
 
-    //void OnTriggerEnter(Collider other)
-    //{
-    //    if (other.tag == "NextTileTriggers")
-    //    {
-    //        GetComponentsInChildren<MeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
-    //        //Destroy(this);
-    //    }
-    //}
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "NextTileTriggers")
+        {
+            GetComponentsInChildren<MeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
+            //Destroy(this);
+        }
+    }
 
     public void Look(Vector3 look)
     {
