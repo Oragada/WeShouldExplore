@@ -9,7 +9,7 @@ using Assets.Scripts;
 //public enum for use in ActiveTile and WorldGeneration as well
 public enum Direction {North,South,East,West,None,NorthEast,NorthWest,SouthEast,SouthWest};
 public enum LayerList {Default,b,c,d,e,f,g,h,ignorePebbleCollision,withPebbleCollision};
-public enum CarryObject {Nothing, Flower, Bouquet, Leaf}
+public enum CarryObject {Nothing, Flower, Bouquet, Leaf, Clear}
 
 public class PlayerController : MonoBehaviour {
 	
@@ -59,6 +59,8 @@ public class PlayerController : MonoBehaviour {
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
+    public float fadeCarry;
+    //Cam + Background
 	private Camera isoCam;
 	private Color background;
 	// Debug
@@ -132,6 +134,31 @@ public class PlayerController : MonoBehaviour {
 
 	    React();
 		animationHandling();
+        //if (progress <= FlowerBehaviour.RealFlowerPick)
+        {
+            fadeCarryUpdate();
+        }
+	}
+
+    private void fadeCarryUpdate()
+    {
+        if (fadeCarry > 0)
+        {
+            Transform flower = carryList.First(e => e.name == "SingleFlower");
+            changeTransparancy(fadeCarry, flower);
+            fadeCarry -= Time.deltaTime;
+        }
+        if (fadeCarry <= 0)
+        {
+            fadeCarry = 0;
+            PickUpObject(CarryObject.Clear);
+        }
+    }
+
+    void changeTransparancy(float fadeRemain, Transform carryObject)
+    {
+        Color extColor = carryObject.renderer.material.color;
+        carryObject.renderer.material.color = new Color(extColor.r, extColor.g, extColor.b, (fadeRemain / 5));
     }
 
     void Action()
@@ -240,23 +267,49 @@ public class PlayerController : MonoBehaviour {
 
     public void PickUpObject(CarryObject pickedObject)
     {
-        //Check combination
-        CarryObject nObj = CombineObject(pickedObject);
+        if (progress <= FlowerBehaviour.RealFlowerPick & pickedObject == CarryObject.Flower)
+        {
+            fadeCarry = GetNewFadeCarryDuration();
+            Obj = pickedObject;
+        }
+        else if (progress > FlowerBehaviour.RealFlowerPick || pickedObject != CarryObject.Flower)
+        {
+
+            //Check combination
+            CarryObject nObj = CombineObject(pickedObject);
 
 
-        //Set CarryObject to new object
-        Obj = nObj;
+            //Set CarryObject to new object
+            Obj = nObj;
+        }
+        //else
+        //{
+        //    //Extreme jury-rigging
+        //    CarryObject nObj = CombineObject(pickedObject);
+        //    //Set CarryObject to new object
+        //    Obj = nObj;
+        //}
+        //Fade out flower before 0.3
+        
+
 
         SetCarryShow();
+    }
+
+    private float GetNewFadeCarryDuration()
+    {
+        //0.0 => 2 sec
+        //0.3 => 5 sec
+        return 2 + (progress * 10);
     }
 
     private CarryObject CombineObject(CarryObject newObject)
     {
         switch (Obj)
         {
+            case CarryObject.Clear:
+                return CarryObject.Nothing;
             case CarryObject.Nothing:
-            //case CarryObject.Leaf:
-                //return Obj;
                 return newObject;
             case CarryObject.Bouquet:
             case CarryObject.Flower:
@@ -301,6 +354,7 @@ public class PlayerController : MonoBehaviour {
 
         newRend.gameObject.SetActive(true);
     }
+
 	public static void SetLayerRecursively(GameObject go, int layerNumber)
 	{
 		foreach (Transform trans in go.GetComponentsInChildren<Transform>(true))
@@ -308,6 +362,7 @@ public class PlayerController : MonoBehaviour {
 			trans.gameObject.layer = layerNumber;
 		}
 	}
+
     private void checkProgress()
     {
 		// compute new progress value:
@@ -678,9 +733,9 @@ public class PlayerController : MonoBehaviour {
 
             //in range elements count
             GUI.Label(new Rect(x, y + 220, 100, 20), "Debug:");
-            GUI.Label(new Rect(x, y + 240, 200, 20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
+            //GUI.Label(new Rect(x, y + 240, 200, 20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
             //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements.OfType<RabbitGroupBehavior>().Count().ToString(CultureInfo.InvariantCulture));
-            //GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
+            GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
 
             if (test > 1.5f)
                 movementMode = 2;
