@@ -9,7 +9,7 @@ using Assets.Scripts;
 //public enum for use in ActiveTile and WorldGeneration as well
 public enum Direction {North,South,East,West,None,NorthEast,NorthWest,SouthEast,SouthWest};
 public enum LayerList {Default,b,c,d,e,f,g,h,ignorePebbleCollision,withPebbleCollision};
-public enum CarryObject {Nothing, Flower, Bouquet, Leaf}
+public enum CarryObject {Nothing, Flower, Bouquet, Leaf, Clear}
 
 public class PlayerController : MonoBehaviour {
 	
@@ -21,25 +21,25 @@ public class PlayerController : MonoBehaviour {
 	
 	// gui elements
 	public TutorialGui gui;
+	private ProgressManager progressMng;
 	private GUIText interactionTooltip;
 	
 	//privates
 	private GameObject groundTile;
 	private bool isSitting=false;
 	private int movementMode = -1;
+	protected Animator animator;
 	// interactive stuff
 	private float progress=0.0f;
-	private bool sit = false;
-	private bool interact = false;
+	////private bool sit = false;
+    ////private bool interact = false;
 	private bool dead = false;
-    private List<InteractBehaviour> inRangeElements;
+    private List<ActableBehaviour> inRangeElements;
     private const float THRESH_FOR_NO_COLLISION = 0.1f;
 	private const float THRESH_FOR_PEBBLE_KICKING = 0.1f;
 	private const float THRESH_FOR_TRUE_INTERACTION_TO_COUNT = 0.1f;
 	private const float THRESH_FOR_SITTING_SOUND_FADEOUT = 5.0f; // in seconds
-	private float totalSittingTime = 0.0f; //100.0f for testing
 	private float currSittingTime = 0.0f; //100.0f for testing
-	private uint nearInteractionCounter = 0; // 45 for testing
 	//Inertia
     private Direction lastDir = Direction.None;
 	private float start = 0.0f;
@@ -47,9 +47,9 @@ public class PlayerController : MonoBehaviour {
 	private float duration = 1.0f;
 	private float elapsedTime = 0.0f;
 	// Meshes
-	private GameObject sittingPlayerMesh;
-	private GameObject standingPlayerMesh;
-	private GameObject deadPlayerMesh;
+	//private GameObject sittingPlayerMesh;
+	//private GameObject standingPlayerMesh;
+	//private GameObject deadPlayerMesh;
 	public SphereCollider collisionHelper;
 	private List<SphereCollider> collidingObj;
 	//Sounds
@@ -59,19 +59,25 @@ public class PlayerController : MonoBehaviour {
     //Carried object
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
+    public float fadeCarry;
+    //Cam + Background
 	private Camera isoCam;
 	private Color background;
 	// Debug
-	private float progressOffset = 0.0f;
 	private bool fadeOut=false;
 	private float fadeOutFactor=0.2f;
+    //Currently Pressing Sit & Interact
+    private bool currentPressSit = false;
+    private bool currentPressInteract = false;
+
 	//get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
 		//groundGen = this.GetComponent<GroundGen>;
-		inRangeElements = new List<InteractBehaviour>();
-		
+		inRangeElements = new List<ActableBehaviour>();
+		animator = transform.FindChild("animations").GetComponent<Animator>();
 		groundTile = GameObject.Find("GroundTile");
+		progressMng = (ProgressManager)GameObject.Find("Progression").GetComponent("ProgressManager");
 		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
 		interactionTooltip.text = "";
         //Obj = CarryObject.Nothing;
@@ -85,21 +91,13 @@ public class PlayerController : MonoBehaviour {
 		// find camera
 		isoCam = GameObject.Find("IsoCamera").camera;
 		background = isoCam.backgroundColor;
-		// find meshes		
-		deadPlayerMesh= transform.FindChild("player_dead").gameObject;
-		deadPlayerMesh.SetActive(false);
-		sittingPlayerMesh = transform.FindChild("player_sitting").gameObject;
-		sittingPlayerMesh.SetActive(false);
-		standingPlayerMesh = transform.FindChild("player_standing").gameObject;
-		standingPlayerMesh.SetActive(true);		
 		// set to no collisions with pebbles (via Layers)		
 		SetLayerRecursively(gameObject,(int)(LayerList.ignorePebbleCollision)); // ignorePebbleCollision
 		// colliding stuffs
         collisionHelper = transform.FindChild("ObstacleCollider").gameObject.GetComponent<SphereCollider>();
 		collidingObj = new List<SphereCollider>();
-	}	
+	}
 
-	
 	void Update () {
 		if (dead)
 			return;
@@ -110,62 +108,12 @@ public class PlayerController : MonoBehaviour {
 		// changed the Axis gravity&sensitivity to 1000, for more direct input.
 		// for joystick usage however Vince told me to:
 		/* just duplicate Horizontal and use gravity 1, dead 0.2 and sensitivity 1 that it works*/		
-        sit = Input.GetButtonDown("Sit");
-		interact = Input.GetButtonDown("Interact");
+        ////sit = Input.GetButtonDown("Sit");
+		////interact = Input.GetButtonDown("Interact");
 		
 		checkProgress();
-		
-		if( sit )
-		{
-			if(!isSitting) 
-			{
-				// hide how to sit in the gui
-				gui.doneSit();
-				//sit down
-				currSittingTime = 0.0f;
-				sittingPlayerMesh.SetActive(true);
-				standingPlayerMesh.SetActive(false);
-				//change the carrying position when sitting down
-				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,-0.15f,0.0f);
-				isSitting = true;
-				PlaySittingSound();
-				elapsedTime = duration;
-			}
-			else
-			{
-				gui.doneStandingUp();
-				//stand up again
-				sittingPlayerMesh.SetActive(false);
-				standingPlayerMesh.SetActive(true);
-				//change the carrying position when standing up again
-				transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f,+0.15f,0.0f);
-				StopSittingSound(currSittingTime);
-				isSitting = false;
-				totalSittingTime  += currSittingTime;
-				currSittingTime = 0.0f;
-			}
-		}	
-		
-		if( interact )
-        {
-			InteractBehaviour closest = FindClosestInteractable();
-			if( closest != null) 
-	        {
-				CarryObject co = closest.activate(progress);
-                PickUpObject(co);
-				gui.doneInteract();
-				if( progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
-					nearInteractionCounter++;
-			}	
-		}
-		else
-		{ 
-			// show in the gui what will happen on the "E" button
-			/*if( inRangeElements.Count > 0)
-			{
-				Debug.Log ( inRangeElements[0].getInteractiveText() );
-			}*/
-		}
+
+        Action();
 				
         if( Input.GetButtonDown("ToggleMovementMode"))
 		{	movementMode++;
@@ -184,41 +132,184 @@ public class PlayerController : MonoBehaviour {
 		FadeSounds(Time.deltaTime);		
 		DisplayInteractionTooltip();		
 
-	    BunnyCheck();
+	    React();
+		animationHandling();
+        //if (progress <= FlowerBehaviour.RealFlowerPick)
+        {
+            fadeCarryUpdate();
+        }
 	}
 
-    private void BunnyCheck()
+    private void fadeCarryUpdate()
     {
-        foreach (RabbitGroupBehavior rab in inRangeElements.OfType<RabbitGroupBehavior>())
+        if (fadeCarry > 0)
         {
-            var rabbit = rab;
-            Vector3 toPlayerVec = (transform.position - rabbit.transform.position);
-            toPlayerVec.y *= 0;
-            //toRabVec.Normalize();
-            rabbit.PlayerPos = toPlayerVec;
-            rabbit.activate(progress);
+            Transform flower = carryList.First(e => e.name == "SingleFlower");
+            changeTransparancy(fadeCarry, flower);
+            fadeCarry -= Time.deltaTime;
         }
+        if (fadeCarry <= 0)
+        {
+            fadeCarry = 0;
+            PickUpObject(CarryObject.Clear);
+        }
+    }
+
+    void changeTransparancy(float fadeRemain, Transform carryObject)
+    {
+        Color extColor = carryObject.renderer.material.color;
+        carryObject.renderer.material.color = new Color(extColor.r, extColor.g, extColor.b, (fadeRemain / 5));
+    }
+
+    void Action()
+    {
+        bool pressInteract = Input.GetButton("Interact");
+        if (pressInteract & !currentPressInteract)
+        {
+            Interact();
+            currentPressInteract = true;
+        }
+        else if (!pressInteract & currentPressInteract)
+        {
+            currentPressInteract = false;
+        }
+        bool pressSit = Input.GetButton("Sit");
+        if (pressSit & !currentPressSit)
+        {
+            Sit();
+            currentPressSit = true;
+        }
+        else if (!pressSit & currentPressSit)
+        {
+            currentPressSit = false;
+        }
+
+    }
+
+    void Sit()
+    {
+        if (!isSitting)
+        {
+            // hide how to sit in the gui
+            gui.doneSit();
+            //sit down
+            currSittingTime = 0.0f;
+            animator.SetBool("sitting", true);
+            //change the carrying position when sitting down
+            transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f, -0.15f, 0.0f);
+            isSitting = true;
+            PlaySittingSound();
+            elapsedTime = duration;
+        }
+        else
+        {
+            gui.doneStandingUp();
+            //stand up again
+
+            animator.SetBool("sitting", false);
+            //change the carrying position when standing up again
+            transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f, +0.15f, 0.0f);
+            StopSittingSound(currSittingTime);
+            isSitting = false;
+            progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, currSittingTime);
+            currSittingTime = 0.0f;
+        }
+    }
+
+    void Interact()
+    {
+        InteractableBehaviour closest = FindClosestInteractable();
+        if (closest != null)
+        {
+            animator.SetBool("picking", true);
+
+            CarryObject co = closest.Activate(progress, ToPlayerPos(closest));
+            PickUpObject(co);
+            gui.doneInteract();
+            if (progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
+                progressMng.usedMechanic(ProgressManager.Mechanic.Interaction);
+        }
+    }
+
+	private void animationHandling()
+	{
+		AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+		AnimatorStateInfo nextStateInfo = animator.GetNextAnimatorStateInfo(0);
+		if(stateInfo.nameHash == Animator.StringToHash("Base.Picking"))
+		{
+			animator.SetBool("picking", false );
+		}
+		else if(stateInfo.nameHash == Animator.StringToHash("Base.Kicking"))
+		{
+			animator.SetBool("kicking", false );
+		}
+		else if(stateInfo.nameHash == Animator.StringToHash("Base.Dying"))
+		{
+			animator.SetBool("dead", false);
+		}
+	}
+	
+    private void React()
+    {
+        inRangeElements.OfType<ReactableBehaviour>().ToList().ForEach(e => e.React(progress, ToPlayerPos(e)));
+        //foreach (ReactableBehaviour reactable in inRangeElements.OfType<ReactableBehaviour>())
+        //{
+        //    reactable.React(progress, ToPlayerPos(reactable));
+        //}
+    }
+
+    private Vector3 ToPlayerPos(ActableBehaviour actable)
+    {
+        Vector3 toPlayerVec = (transform.position - actable.transform.position);
+        toPlayerVec.y *= 0;
+        return toPlayerVec;
     }
 
     public void PickUpObject(CarryObject pickedObject)
     {
-        //Check combination
-        CarryObject nObj = CombineObject(pickedObject);
+        if (progress <= FlowerBehaviour.RealFlowerPick & pickedObject == CarryObject.Flower)
+        {
+            fadeCarry = GetNewFadeCarryDuration();
+            Obj = pickedObject;
+        }
+        else if (progress > FlowerBehaviour.RealFlowerPick || pickedObject != CarryObject.Flower)
+        {
+
+            //Check combination
+            CarryObject nObj = CombineObject(pickedObject);
 
 
-        //Set CarryObject to new object
-        Obj = nObj;
+            //Set CarryObject to new object
+            Obj = nObj;
+        }
+        //else
+        //{
+        //    //Extreme jury-rigging
+        //    CarryObject nObj = CombineObject(pickedObject);
+        //    //Set CarryObject to new object
+        //    Obj = nObj;
+        //}
+        //Fade out flower before 0.3
+        
+
 
         SetCarryShow();
+    }
+
+    private float GetNewFadeCarryDuration()
+    {
+        //0.0 => 2 sec
+        //0.3 => 5 sec
+        return 2 + (progress * 10);
     }
 
     private CarryObject CombineObject(CarryObject newObject)
     {
         switch (Obj)
         {
+            case CarryObject.Clear:
+                return CarryObject.Nothing;
             case CarryObject.Nothing:
-            //case CarryObject.Leaf:
-                //return Obj;
                 return newObject;
             case CarryObject.Bouquet:
             case CarryObject.Flower:
@@ -263,6 +354,7 @@ public class PlayerController : MonoBehaviour {
 
         newRend.gameObject.SetActive(true);
     }
+
 	public static void SetLayerRecursively(GameObject go, int layerNumber)
 	{
 		foreach (Transform trans in go.GetComponentsInChildren<Transform>(true))
@@ -270,17 +362,19 @@ public class PlayerController : MonoBehaviour {
 			trans.gameObject.layer = layerNumber;
 		}
 	}
+
     private void checkProgress()
     {
 		// compute new progress value:
-		progress = Mathf.Min(1.01f, (Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f)+progressOffset;
+		progressMng.computeProgress();
+		progress = progressMng.getProgress();
 		// set attributes accordingly
-		float grey = Mathf.Min(1.0f, -0.4f*progress+0.5f);
-		playerMat.color = new Color(grey,grey,grey, Mathf.Min(1.0f, 0.3f+progress*5.0f)); // transparency
+		float grey = progressMng.getValue(ProgressManager.Values.GreyPlayerColor);
+		playerMat.color = new Color(grey,grey,grey,  progressMng.getValue(ProgressManager.Values.Alpha)); // transparency
 		//rigidbody.isKinematic = progress <= THRESH_FOR_NO_COLLISION; // starts colliding
-		speed = Mathf.Max(20.0f, 45.0f - (progress*40.0f)); // reduced speed
-		duration = Mathf.Max(0.0f, 1.0f - progress*10.0f); // reduced sliding
-		distance = Mathf.Max(0.0f, 0.1f - progress);		// reduced sliding
+		speed =  progressMng.getValue(ProgressManager.Values.Speed); // reduced speed
+		duration = progressMng.getValue(ProgressManager.Values.InertiaDuration); // reduced sliding
+		distance = progressMng.getValue(ProgressManager.Values.InertiaDistance); // reduced sliding
 		
 		if (progress > THRESH_FOR_PEBBLE_KICKING)
 		{			
@@ -288,11 +382,11 @@ public class PlayerController : MonoBehaviour {
 		}
 		
 		//start fading the background to black				
-		float lower = Mathf.Min(1.0f,(1.0f - (progress))/0.1f);
+		float lower = progressMng.getValue(ProgressManager.Values.BackgroundColorFactor);
 		isoCam.backgroundColor = new Color ( background.r*lower , background.g*lower, background.b*lower, 1.0f);
 	
 		// he dies at progress 1.0f
-		if (progress > 1.0f)
+		if (progress > 1.0f && !dead)
 		{
 			Die();
 		}
@@ -406,7 +500,8 @@ public class PlayerController : MonoBehaviour {
 	private Vector3 checkForCollisions(Direction moved)
 	{
 		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
-		if (progress < 0.1f) // do not collide before progress of 0.1f is reached
+		float collSizePercent = progressMng.getValue(ProgressManager.Values.CollisionSizePercent);
+		if (collSizePercent == 0.0f) // do not compute collisions when the CollisionSizePercent is zero
 			return ret;
 		foreach( SphereCollider enemy in collidingObj)
 		{
@@ -414,11 +509,14 @@ public class PlayerController : MonoBehaviour {
 			Vector3 dif = collisionHelper.transform.position - enemy.transform.position;
 			// ignore Y-difference
 			dif.y = 0.0f;
-			// convert the collision-vector to local space, because player rotates in the movementfunction
-			dif = transform.InverseTransformDirection(dif);	
-    		// offset the player frame & speed independent 
-			// *0.7f makes sure that diagonal movement should be save ( 1 / sqrt(2) )
-			ret.Set((dif.x)/(Time.deltaTime*speed*1.0f), ret.y,(dif.z)/(Time.deltaTime*speed*1.0f));
+			if(((collisionHelper.radius + enemy.radius)*collSizePercent) > dif.magnitude)
+			{
+				// convert the collision-vector to local space, because player rotates in the movementfunction
+				dif = transform.InverseTransformDirection(dif);	
+	    		// offset the player frame & speed independent 
+				// *0.7f makes sure that diagonal movement should be save ( 1 / sqrt(2) )
+				ret.Set((dif.x)/(Time.deltaTime*speed*1.0f), ret.y,(dif.z)/(Time.deltaTime*speed*1.0f));
+			}
 		}			
 		return ret;
 	}	
@@ -504,6 +602,13 @@ public class PlayerController : MonoBehaviour {
 			// update tile, pass the direction along
 			groundTile.GetComponent<GroundGen>().showNextTile(dir);
 			gui.doneFollow();
+			if( gui.firstTileDone() )
+				gui.doneSecondTile();
+			else 
+				gui.doneFirstTile();
+
+			progressMng.usedMechanic(ProgressManager.Mechanic.Travel);
+
 			//groundTile.GetComponent<GroundGen>().
 			setPlayersYPosition();
 		}
@@ -517,7 +622,7 @@ public class PlayerController : MonoBehaviour {
 					collidingObj.Add( colli.GetComponent<SphereCollider>() );				
 			}
 			
-			InteractBehaviour addThis = other.GetComponent<InteractBehaviour>();
+			ActableBehaviour addThis = other.GetComponent<ActableBehaviour>();
 
             /*if (addThis.GetType() == typeof (RabbitGroupBehavior))
             {
@@ -533,7 +638,7 @@ public class PlayerController : MonoBehaviour {
 			
 			if( progress < THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
 			{
-				nearInteractionCounter++;
+				progressMng.usedMechanic( ProgressManager.Mechanic.Interaction );
 			}
 		}
 		else if( other.name == "CollisionCollider")
@@ -545,42 +650,52 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 	}
-	private InteractBehaviour FindClosestInteractable()
+	private InteractableBehaviour FindClosestInteractable()
 	{
-		if( inRangeElements.Count < 1)
+	    List<InteractableBehaviour> intera = inRangeElements.Where(e => e is InteractableBehaviour).Cast<InteractableBehaviour>().ToList();
+		if( intera.Count < 1)
 			return null;
-		InteractBehaviour ret = inRangeElements[0];
-		float dist = Vector3.Distance(transform.position, inRangeElements[0].transform.position);
-		if( inRangeElements.Count == 1)
-			return ret;
-		foreach (InteractBehaviour i in inRangeElements)
-        {
-			if( dist > Vector3.Distance(transform.position, i.transform.position))
-			{
-				dist = Vector3.Distance(transform.position, i.transform.position);
-				ret = i;
-			}
-		}
-		return ret;
+        //Slightly clunky
+	    return intera.First(
+	            e =>
+	            Vector3.Distance(transform.position, e.transform.position) <=
+	            intera.Min(f => Vector3.Distance(transform.position, f.transform.position)));
+
+		//ActableBehaviour ret = intera[0];
+		//float dist = Vector3.Distance(transform.position, inRangeElements[0].transform.position);
+		//if( inRangeElements.Count == 1)
+        //    return ret;
+        //foreach (ActableBehaviour i in inRangeElements)
+        //{
+        //    if( dist > Vector3.Distance(transform.position, i.transform.position))
+        //    {
+        //        dist = Vector3.Distance(transform.position, i.transform.position);
+        //        ret = i;
+        //    }
+        //}
+        //return ret;
+
 	}
+
 	private void DisplayInteractionTooltip()
 	{
 		if ( dead )
 			return;
 		
 		interactionTooltip.text = "";
-		InteractBehaviour closest = FindClosestInteractable();
+		InteractableBehaviour closest = FindClosestInteractable();
 		if( closest != null) 
         {
 			if (closest.customInteractiveText() != null)
-				interactionTooltip.text = "Press E "+closest.customInteractiveText();
+				interactionTooltip.text = "Press <b>E</b> "+closest.customInteractiveText();
 		}				
 	}
-	public void channeledTriggerExit(Collider other)
+	
+    public void channeledTriggerExit(Collider other)
 	{
 		if( other.gameObject.tag == "Interactable")
 		{
-            InteractBehaviour removeThis = other.GetComponent<InteractBehaviour>();
+            ActableBehaviour removeThis = other.GetComponent<ActableBehaviour>();
             if (removeThis.GetType() == typeof(RabbitGroupBehavior))
             {
                 ((RabbitGroupBehavior)removeThis).Deactivate();
@@ -597,8 +712,8 @@ public class PlayerController : MonoBehaviour {
         if (movementMode != -1)
         {
             //progressbar
-            GUI.Label(new Rect(x, y, 120, 20), "Progress: 0" + progress.ToString("#.##"));
-            progressOffset = GUI.HorizontalSlider(new Rect(x, y + 20, 300, 10), progressOffset, -1.0f, 1.0f);
+            GUI.Label(new Rect(x, y, 120, 20), "Progress: " + progressMng.getProgress().ToString("#.##"));
+            progressMng.prog_offset = GUI.HorizontalSlider(new Rect(x, y + 20, 300, 10),progressMng.prog_offset, -1.01f, 1.01f);
 
             //speed slider
             GUI.Label(new Rect(x, y + 40, 120, 20), "Speed: " + speed.ToString(CultureInfo.InvariantCulture));
@@ -618,7 +733,7 @@ public class PlayerController : MonoBehaviour {
 
             //in range elements count
             GUI.Label(new Rect(x, y + 220, 100, 20), "Debug:");
-            //GUI.Label(new Rect(x, y + 180, 200, 20), inRangeElements[0].ToString());
+            //GUI.Label(new Rect(x, y + 240, 200, 20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
             //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements.OfType<RabbitGroupBehavior>().Count().ToString(CultureInfo.InvariantCulture));
             GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
 
@@ -634,9 +749,8 @@ public class PlayerController : MonoBehaviour {
 	{
 		dead = true;
 		// change mesh to lying 
-		sittingPlayerMesh.SetActive(false);
-		standingPlayerMesh.SetActive(false);
-		deadPlayerMesh.SetActive(true);
+		Debug.Log ("die only once.");
+		animator.SetBool("dead", true );
 		// start Death sounds
 		PlayDeathSound();
 		// clean the interaction Tooltip text

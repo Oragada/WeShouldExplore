@@ -1,0 +1,328 @@
+fileFormatVersion: 2
+guid: cf1c29c405c8d3d4888159517a99ffdb
+ModelImporter:
+  serializedVersion: 15
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: AnimGroup1
+    100004: AnimGroup2
+    100006: SimsCone
+    100008: SimsCone01
+    100010: SimsCone011
+    100012: SimsCone012
+    100014: SimsCone013
+    100016: SimsCone014
+    100018: SimsCone015
+    100020: SimsCone016
+    100022: SimsCone017
+    100024: SimsCone018
+    100026: SimsCone019
+    100028: SimsCone02
+    100030: SimsCone020
+    100032: SimsCone021
+    100034: SimsCone03
+    100036: SimsCone04
+    100038: SimsCone05
+    100040: SimsCone06
+    100042: SimsCone07
+    100044: SimsCone08
+    100046: SimsCone09
+    100048: SimsCone10
+    400000: //RootNode
+    400002: AnimGroup1
+    400004: AnimGroup2
+    400006: SimsCone
+    400008: SimsCone01
+    400010: SimsCone011
+    400012: SimsCone012
+    400014: SimsCone013
+    400016: SimsCone014
+    400018: SimsCone015
+    400020: SimsCone016
+    400022: SimsCone017
+    400024: SimsCone018
+    400026: SimsCone019
+    400028: SimsCone02
+    400030: SimsCone020
+    400032: SimsCone021
+    400034: SimsCone03
+    400036: SimsCone04
+    400038: SimsCone05
+    400040: SimsCone06
+    400042: SimsCone07
+    400044: SimsCone08
+    400046: SimsCone09
+    400048: SimsCone10
+    2300000: SimsCone
+    2300002: SimsCone01
+    2300004: SimsCone011
+    2300006: SimsCone012
+    2300008: SimsCone013
+    2300010: SimsCone014
+    2300012: SimsCone015
+    2300014: SimsCone016
+    2300016: SimsCone017
+    2300018: SimsCone018
+    2300020: SimsCone019
+    2300022: SimsCone02
+    2300024: SimsCone020
+    2300026: SimsCone021
+    2300028: SimsCone03
+    2300030: SimsCone04
+    2300032: SimsCone05
+    2300034: SimsCone06
+    2300036: SimsCone07
+    2300038: SimsCone08
+    2300040: SimsCone09
+    2300042: SimsCone10
+    3300000: SimsCone
+    3300002: SimsCone01
+    3300004: SimsCone011
+    3300006: SimsCone012
+    3300008: SimsCone013
+    3300010: SimsCone014
+    3300012: SimsCone015
+    3300014: SimsCone016
+    3300016: SimsCone017
+    3300018: SimsCone018
+    3300020: SimsCone019
+    3300022: SimsCone02
+    3300024: SimsCone020
+    3300026: SimsCone021
+    3300028: SimsCone03
+    3300030: SimsCone04
+    3300032: SimsCone05
+    3300034: SimsCone06
+    3300036: SimsCone07
+    3300038: SimsCone08
+    3300040: SimsCone09
+    3300042: SimsCone10
+    4300000: SimsCone
+    4300002: SimsCone01
+    4300004: SimsCone02
+    4300006: SimsCone09
+    4300008: SimsCone04
+    4300010: SimsCone05
+    4300012: SimsCone06
+    4300014: SimsCone07
+    4300016: SimsCone03
+    4300018: SimsCone10
+    4300020: SimsCone08
+    4300022: SimsCone011
+    4300024: SimsCone012
+    4300026: SimsCone013
+    4300028: SimsCone014
+    4300030: SimsCone015
+    4300032: SimsCone016
+    4300034: SimsCone017
+    4300036: SimsCone018
+    4300038: SimsCone019
+    4300040: SimsCone020
+    4300042: SimsCone021
+    7400000: StartMeditatingClip
+    7400002: LoopMeditationClip
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: StartMeditatingClip
+      takeName: Take 001
+      firstFrame: 0
+      lastFrame: 100
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: AnimGroup1
+        weight: 1
+      - path: AnimGroup1/SimsCone
+        weight: 1
+      - path: AnimGroup1/SimsCone01
+        weight: 1
+      - path: AnimGroup1/SimsCone02
+        weight: 1
+      - path: AnimGroup1/SimsCone03
+        weight: 1
+      - path: AnimGroup1/SimsCone04
+        weight: 1
+      - path: AnimGroup1/SimsCone05
+        weight: 1
+      - path: AnimGroup1/SimsCone06
+        weight: 1
+      - path: AnimGroup1/SimsCone07
+        weight: 1
+      - path: AnimGroup1/SimsCone08
+        weight: 1
+      - path: AnimGroup1/SimsCone09
+        weight: 1
+      - path: AnimGroup1/SimsCone10
+        weight: 1
+      - path: AnimGroup2
+        weight: 1
+      - path: AnimGroup2/SimsCone011
+        weight: 1
+      - path: AnimGroup2/SimsCone012
+        weight: 1
+      - path: AnimGroup2/SimsCone013
+        weight: 1
+      - path: AnimGroup2/SimsCone014
+        weight: 1
+      - path: AnimGroup2/SimsCone015
+        weight: 1
+      - path: AnimGroup2/SimsCone016
+        weight: 1
+      - path: AnimGroup2/SimsCone017
+        weight: 1
+      - path: AnimGroup2/SimsCone018
+        weight: 1
+      - path: AnimGroup2/SimsCone019
+        weight: 1
+      - path: AnimGroup2/SimsCone020
+        weight: 1
+      - path: AnimGroup2/SimsCone021
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: LoopMeditationClip
+      takeName: Take 001
+      firstFrame: 100
+      lastFrame: 200
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: AnimGroup1
+        weight: 1
+      - path: AnimGroup1/SimsCone
+        weight: 1
+      - path: AnimGroup1/SimsCone01
+        weight: 1
+      - path: AnimGroup1/SimsCone02
+        weight: 1
+      - path: AnimGroup1/SimsCone03
+        weight: 1
+      - path: AnimGroup1/SimsCone04
+        weight: 1
+      - path: AnimGroup1/SimsCone05
+        weight: 1
+      - path: AnimGroup1/SimsCone06
+        weight: 1
+      - path: AnimGroup1/SimsCone07
+        weight: 1
+      - path: AnimGroup1/SimsCone08
+        weight: 1
+      - path: AnimGroup1/SimsCone09
+        weight: 1
+      - path: AnimGroup1/SimsCone10
+        weight: 1
+      - path: AnimGroup2
+        weight: 1
+      - path: AnimGroup2/SimsCone011
+        weight: 1
+      - path: AnimGroup2/SimsCone012
+        weight: 1
+      - path: AnimGroup2/SimsCone013
+        weight: 1
+      - path: AnimGroup2/SimsCone014
+        weight: 1
+      - path: AnimGroup2/SimsCone015
+        weight: 1
+      - path: AnimGroup2/SimsCone016
+        weight: 1
+      - path: AnimGroup2/SimsCone017
+        weight: 1
+      - path: AnimGroup2/SimsCone018
+        weight: 1
+      - path: AnimGroup2/SimsCone019
+        weight: 1
+      - path: AnimGroup2/SimsCone020
+        weight: 1
+      - path: AnimGroup2/SimsCone021
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  userData: 
