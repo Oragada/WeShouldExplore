@@ -1,25 +1,32 @@
 ﻿//#pragma strict
 
-//PUBLIC
-
-var depthGenR: GameObject;
+var depthGenR: GameObject;																	//PUBLIC VARIABLES
 var depthGenL: GameObject;
 
 var ground : Mesh;
 var groundCol : MeshCollider;
-var frictionMap: PhysicMaterial;
+//var frictionMap: PhysicMaterial;
 var width : int;
 var height : int;
 
-//Noise properties
+var xOff : int;	
+var yOff: int;
+var zOff: int;
+
 @Range (0.0, 1.0)
-var frequency = 0.2; //Noise frequency
+var frequency = 0.044; 																		//Noise frequency 0.2?, 0.107 orig //0.044 more normal
 
 @Range (-1.0, 10.0)
-var scale = 1.0; //Noise scale
+var scale = 5.0; 																			// 1.0 ?, 3.5 //3.5 more normal
 
-//Tile Offsets
-var flower : GameObject;
+@Range (0.0, 1.0)
+var frequencyDetail = 0.309;
+
+@Range (-1.0, 10.0)
+var scaleDetail = 0.72;																		//Noise scale
+
+
+var flower : GameObject;																	//Tile Offsets
 var bush : GameObject;
 var pebble : GameObject;
 var rabbits : GameObject;
@@ -28,52 +35,171 @@ var grass1 : GameObject;
 var grass2 : GameObject;
 var tree: GameObject;
 
+var memorySize = 1;
+
 var groundMat : Material;
 
-//PRIVATE
-var xOff;
-var yOff;
-var zOff;
-
-var tileChangeFlag;
+																				
+var tileChangeFlag;																			//PRIVATE VARIABLES
 var currentScat = new Array();
 var lastScat = new Array();
 
+var bordersID;
+var emptyID;
+var treesID;
+var areolasID;
+var bushesID;
+var flowersID;
+var shroomsID;
+var animalsID;
+var pebblesID;
+var grassID;
+
+var renderedInstances = new Array();
+
+var inMemoryFlag;
+
+var currentScatID;
+
+var tileStack = new Array();
+
+var scatterStack = new Array();
 
 
-function Start() {
+
+function Start() {																			//-----Start-----//
 
 	xOff = 0;
 	yOff = 0;
 	zOff = 0;
 	
+	tileStack[0] = "0x0";
+	
+	bordersID = -1;
+	emptyID = 0;
+	treesID = 1;
+	areolasID = 2;
+	bushesID = 3;
+	flowersID = 4;
+	shroomsID = 5;
+	animalsID = 6;
+	pebblesID = 7;
+	grassID = 8;
+
+	
 	tileChangeFlag = 0;
+	inMemoryFlag = 0;
 
 	GenerateGround();
 	ChangeTerrain();
 	
+	currentScat = ProbabilityScatter();	
+	
+	scatterStack[0] = currentScat;
+	
+	ScatterRenderer(currentScat);
+	
 	
 }
 
-function Update() {
+function Update() {																			//-----Update-----//
 
-	/*This is in the update function because the previous tile collider gets destroyed
-	no sooner than the next update. In other words: right about now */
 	
-	if(tileChangeFlag==1) {	
+	if (tileChangeFlag==1) {
+	
+		tileChangeFlag=0;	
+	
+		for(var k=0;k<renderedInstances.length;k++) {
+			var toKill = renderedInstances[k];
+			Destroy(toKill);
+		}			
+															
 		ChangeTerrain();
-		tileChangeFlag=0;
+		
+		CheckMemory();																		// This is in the update function because the previous tile collider gets destroyed no sooner than the next update. In other words: right about now	
+		
+											
+		
+		scatterStack.Add(currentScat);														//The current scat gets always saved to the stacked
+																														
 	}
+	
+	
 
 }
 
-////////////////////////////////////////////
-//										  //
-//          FUNCTION DEFINITIONS		  //
-//										  //		
-////////////////////////////////////////////
 
-function GenerateGround() {
+
+function CheckMemory() {
+
+	inMemoryFlag = 0;
+
+	var xs = xOff/19;
+	var zs = zOff/19;
+	
+	var x = xs.ToString();
+	var z = zs.ToString();
+	
+	currentScatID = String.Format("{0}{1}{2}", x, "x", z);
+	
+	for (var i = 0; i<tileStack.length; i++) {
+	
+		if( tileStack[i] == currentScatID) {												//If it's an old one, get it from scatterStack and render it;
+						
+			currentScat = scatterStack[i];
+			inMemoryFlag = 1;
+			
+		}	
+	}
+	
+	if(tileStack.length<memorySize) {												
+		
+		tileStack.Add(currentScatID);
+		
+	} else {
+		
+		tileStack.Shift();
+		
+		tileStack.Add(currentScatID);
+	}
+	
+	if (inMemoryFlag == 1) {																//If this tile is in the memory, fish out the scat and
+		ScatterRenderer(currentScat);
+		inMemoryFlag = 0;
+	} else {
+		currentScat = ProbabilityScatter();
+		ScatterRenderer(currentScat);
+	}	
+}
+
+
+function showNextTile(dir) {																//-----ShowNextTile-----//
+
+	switch(dir) {
+		case 0: 																				//North
+			xOff += 19; 
+		break;
+		case 1: 																				//South
+			xOff -= 19;
+		break;
+		case 2:																					//East
+			zOff -= 19;																		
+		break;
+		case 3:																					//West
+			zOff += 19;																	
+		break;
+	}	
+	
+	Destroy(GetComponent(MeshCollider));														//Destroy the mesh collider of the current tile before generating a new one
+	
+	tileChangeFlag = 1;
+	
+}
+
+																					
+																					
+
+function GenerateGround() {																	//-----GenerateGround-----//
 
 	gameObject.AddComponent(MeshFilter);
 	gameObject.AddComponent(MeshRenderer);
@@ -92,29 +218,29 @@ function GenerateGround() {
 
 	var triangles = new int[triCount*3];
 	
-	//Generates vertices
-	var i = 0;
+	
+	var i = 0;																					//Generate vertices
 	for(var y=0;y<height;y++) {
 		for(var x=0;x<width;x++) {
 		
 			vertices[i++] = Vector3(x,0,y);
 
-// my tangents solution - didn't work		
-// 			var vertexL = Vector3( x-1, 0, y );
-// 			var vertexR = Vector3( x+1, 0, y );
-//	
-// 			var tan = Vector3.Scale( Vector3(1,1,1), vertexR - vertexL ).normalized;
-// 			tangents[i-1] = Vector4( tan.x, tan.y, tan.z, 1 );
-// 
-// 			var tan = vertexR - vertexL;
-// 			tan = tan.normalized;
-//  		tangents[i-1] = Vector4( tan.x, tan.y, tan.z, -1 );
+																								// my tangents solution - didn't work		
+																								// 			var vertexL = Vector3( x-1, 0, y );
+																								// 			var vertexR = Vector3( x+1, 0, y );
+																								//	
+																								// 			var tan = Vector3.Scale( Vector3(1,1,1), vertexR - vertexL ).normalized;
+																								// 			tangents[i-1] = Vector4( tan.x, tan.y, tan.z, 1 );
+																								// 
+																								// 			var tan = vertexR - vertexL;
+																								// 			tan = tan.normalized;
+																								//  		tangents[i-1] = Vector4( tan.x, tan.y, tan.z, -1 );
 			
 		}
 	}
 	
-	//Generates triangles
-	i = 0;
+	
+	i = 0;																						//Generate triangles
 	for(var yt=0;yt<height-1;yt++) {
 		for(var xt=0;xt<width-1;xt++) {
 		
@@ -128,28 +254,27 @@ function GenerateGround() {
 		}
 	}
 	
-	//Generates uvs
-	for(var u=0; u < uvs.Length; u++) {
+	
+	for(var u=0; u < uvs.Length; u++) {															//Generate uvs
 
 		uvs[u] = Vector2(vertices[u].x, vertices[u].z);
 	
 	}
 	
-	//Assigns vertices, triangles and uvs to the ground mesh
 	
-	ground.vertices = vertices;
+	
+	ground.vertices = vertices;																	//Assign vertices, triangles and uvs to the ground mesh
 	ground.triangles = triangles;
 	ground.uv = uvs;
 	
 	ground.RecalculateNormals();
 	
-	//tangents
-	//ground.tangents = tangents;
-	//TangentSolver(ground);
+																								//tangents
+																								//ground.tangents = tangents;
+																								//TangentSolver(ground);
 	
-	
-	//Scale the mesh so it's the same size on the screen no matter what BREAKS OTHER SHIT IF NOT 20x20 RIGHT NOW
-	transform.localScale.x = 20/(width*1.0);
+
+	transform.localScale.x = 20/(width*1.0);													//Scale the mesh so it's the same size on the screen no matter what BREAKS OTHER SHIT IF NOT 20x20 RIGHT NOW
 	transform.localScale.z = 20/(height*1.0);
 	transform.localScale.y = transform.localScale.x;
 	
@@ -157,56 +282,44 @@ function GenerateGround() {
 }
 
 
-function returnPlayerPos(x,z) {
+function returnPlayerPos(x,z) {																//-----returnPlayerPos-----//
 
 	return returnGroundY(x,z)+0.2;
 	
 }
 
-function returnGroundY(x,z) {
+function returnGroundY(x,z) {																//-----ReturnGroundY-----//
 	
-	return Mathf.PerlinNoise(z*frequency+(zOff*frequency),x*frequency+(xOff*frequency))*scale;
+// 	return Mathf.PerlinNoise(z*frequency+(zOff*frequency), 										//Single step Perlin noise for the ground
+// 							 x*frequency+(xOff*frequency))*scale;
+
+	
+	var base = Mathf.PerlinNoise(z*frequency+(zOff*frequency), 									//base Perlin noise for the ground
+	 							 x*frequency+(xOff*frequency))*scale;
+	
+	var detail = Mathf.PerlinNoise(z*frequencyDetail+(zOff*frequencyDetail), 					//detailing Perlin noise for the ground
+	    						   x*frequencyDetail+(xOff*frequencyDetail))*scaleDetail;
+	    						   
+	return base+detail; 							
 
 }
 
+function returnCurvature(x,z) {																//-----ReturnCurvature-----//
 
-function showNextTile(dir) {
-
-	switch(dir) {
-		case 0: //North
-			xOff += 19; 
-		break;
-		case 1: //South
-			xOff -= 19;
-		break;
-		case 2:
-			zOff -= 19;
-		break;
-		case 3:
-			zOff += 19;
-		break;
-	}
-	
-	Destroy(GetComponent(MeshCollider));
-	
-	tileChangeFlag = 1;
-	
+	return Mathf.PerlinNoise(z*frequency+(zOff*frequency), 										//base Perlin noise for the ground
+	 				  x*frequency+(xOff*frequency))*scale;
+	 				  
 }
 
-function ChangeTerrain() {
+function ChangeTerrain() {																	//-----ChangeTerrain-----//
 
-	//Clear currectScat for the new tile
-	if (currentScat.length>0) {
+	
+	if (renderedInstances.length>0) {															//Clear renderedInstances for the new tile
 
-		for(var k=0;k<currentScat.length;k++) {
-			var toKill = currentScat[k];
-			//currentScat.RemoveAt(k);
-			Destroy(toKill);
-		}
+		
 	}
 
-	//transfer height map data on mesh
-	ground = GetComponent(MeshFilter).mesh;
+	ground = GetComponent(MeshFilter).mesh;														//transfer height map data on mesh
 	
 	var vertices = ground.vertices;
 	
@@ -222,40 +335,275 @@ function ChangeTerrain() {
 	ground.vertices = vertices;
 	ground.RecalculateNormals();
 	
-	//Generate collision mesh for new tile
-	gameObject.AddComponent(MeshCollider);
 	
-	//Make depth planes
-	depthGenR.GetComponent(DepthGenR).Generate();
+	gameObject.AddComponent(MeshCollider);														//Generate collision mesh for new tile
+	
+	depthGenR.GetComponent(DepthGenR).Generate();												//Make depth planes
 	depthGenL.GetComponent(DepthGenL).Generate();
-	
-	//
-	//SCATTERING - very nasty, should be rewriten
-	
-	lastScat = currentScat;
-	
-	var availablePositions = new Array();
-	
-	for (var c=0; c < vertices.length; c++) {
-		availablePositions[c] = 0;
-	}
-	
-	currentScat = ScatterTrees(availablePositions, tree, 0.0, 10, 30, 0, 1);
-	
-	currentScat = currentScat.concat(Scatter(availablePositions, bush, -0.1, 3, 10, 0, 1));
-	
-	currentScat = currentScat.concat(Scatter(availablePositions, flower, -0.2, 10, 30, 0, 1));
-
-    currentScat = currentScat.concat(ScatterRabbits(availablePositions, rabbits, 0, 1, 2, 0, 1));
-    
-    currentScat = currentScat.concat(ScatterPebble(availablePositions, pebble, 0, 10, 20, 1, 1));
-    
-    currentScat = currentScat.concat(ScatterGrass(availablePositions, grass,/*offsetY*/ 0.4,/*quantityMin*/ 400,/*quantityMax*/ 500,/*rigidBody*/ 0,/*randomRotation*/ 0));
-	
-	
 
 
 }
+
+
+function ProbabilityScatter() {																//-------ProbabilityScatter-------//
+
+	var toRender = new Array();
+	
+	var treeProb = 0.1;																			//Probabilities
+	var bushProb = 0.1;
+	var grassProb = 0.6;
+	var pebbleProb = 0.4;
+	var flowerProb = 0.3;
+	
+	
+	var index = 0;																				//Fill borders with -1 so nothing can spawn there
+	for (var c=0; c < height; c++) {
+		for (var f=0; f < width; f++) {
+
+			if (c == 0 || c == height-1) {
+				toRender[index] = -1;
+			} else if (f == 0 || f == width-1) {
+				toRender[index] = -1;
+			} else {
+			toRender[index] = 0;
+			}
+			index++;
+		}
+	}
+	
+	var i;
+	
+	for (i=0; i < toRender.length; i++) {														//SCATTER TREES//
+		
+		if (toRender[i]==0) {
+				
+			if (Random.Range(0.0,1.0)<treeProb) {
+			
+				toRender[i] = treesID;
+				
+				TreeAreola(i, toRender);														//Tree Areola
+				
+				
+			}
+		}
+	}
+	
+	i = 0;
+	
+	
+	for (i=0; i < toRender.length; i++) {														//SCATTER BUSHES//
+		
+		
+		if (toRender[i]==0) {																	//if on empty land
+				
+			if (Random.Range(0.0,1.0)<bushProb) {
+			
+				toRender[i] = bushesID;
+				
+			}
+		
+		} else if (toRender[i]==areolasID) {															//if under tree, probability just 10% of the normal	
+		
+			if (Random.Range(0.0,1.0)<bushProb*0.1) {
+			
+				toRender[i] = bushesID;
+				
+			}
+		}
+	}
+	
+	
+	for (i=0; i < toRender.length; i++) {														//SCATTER GRASS//
+		
+		if (toRender[i]==emptyID || toRender[i]==areolasID) {
+				
+			if (Random.Range(0.0,1.0)<grassProb) {
+			
+				toRender[i] = grassID;													
+				
+				
+			}
+		}
+	}
+	
+	for (i=0; i < toRender.length; i++) {														//SCATTER PEBBLES//
+		
+		if (toRender[i]==emptyID) {
+				
+			if (Random.Range(0.0,1.0)<pebbleProb) {
+			
+				toRender[i] = pebblesID;	
+				
+				
+			}
+		}
+	}
+	
+	for (i=0; i < toRender.length; i++) {														//SCATTER FLOWERS//
+		
+		if (toRender[i]==emptyID || toRender[i]==areolasID) {
+				
+			if (Random.Range(0.0,1.0)<flowerProb) {
+			
+				toRender[i] = flowersID;													
+				
+				
+			}
+		}
+	}
+	
+	
+	return toRender;
+}
+
+																							
+
+function ScatterRenderer(toRender) {														//----ScatterRenderer----//
+
+	for (var i=0;i<toRender.length;i++) {
+	
+		var x = (i % width) + Random.Range(-0.2,0.2);
+		var z = Mathf.FloorToInt(i/width) + Random.Range(-0.2,0.2);
+		var y = returnGroundY(x,z);
+		
+		var temPos = Vector3(x, y, z);
+	
+		switch (toRender[i]) {
+		
+			case emptyID:
+			
+			break;
+			
+			case treesID:																	//render TREES//
+			
+				temPos.y+=0.2;
+			
+				renderedInstances[i] = Instantiate(tree, temPos, Quaternion.identity);
+				
+				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);
+			
+			break;
+			
+			
+			case areolasID:																	//render TREE AREOLAS//
+			
+				//renderedInstances[i] = Instantiate(flower, temPos, Quaternion.identity);		//instantiation
+				
+				//renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+			break;
+			
+			
+			case bushesID:																	//render BUSHES//
+				
+				
+				temPos.y+=0.0; 																	//vertical offset
+				
+				renderedInstances[i] = Instantiate(bush, temPos, Quaternion.identity); 			//instantiation
+				
+				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+			break;
+			
+			case flowersID:																	//render FLOWERS//
+				
+				
+				temPos.y+=0.0; 																	//vertical offset
+				
+				renderedInstances[i] = Instantiate(flower, temPos, Quaternion.identity); 			//instantiation
+				
+				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+			break;
+			
+			case grassID:																	//render GRASS//
+				
+				
+				temPos.y+=0.5; 																	//vertical offset
+				
+				renderedInstances[i] = Instantiate(grass1, temPos, Quaternion.identity); 		//instantiation
+				
+				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+			break;
+			
+			case pebblesID:																	//render PEBBLES//
+				
+				temPos.y+=0.2; 																	//vertical offset
+				
+				renderedInstances[i] = Instantiate(pebble, temPos, Quaternion.identity); 		//instantiation
+				
+				renderedInstances[i].rigidbody.Sleep();	
+															
+				//renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+			break;
+		}
+	}
+}
+
+
+
+
+
+
+function TreeAreola(i, toRender) {															//----TreeAreola----//
+
+	toRender[i-1] = toRender[i-1]==bordersID ? bordersID : areolasID;
+	toRender[i+1] = toRender[i+1]==bordersID ? bordersID : areolasID;
+	toRender[i-width] = toRender[i-width]==bordersID ? bordersID : areolasID;
+	toRender[i-width-1] = toRender[i-width-1]==bordersID ? bordersID : areolasID;
+	toRender[i-width+1] = toRender[i-width+1]==bordersID ? bordersID : areolasID;
+	toRender[i+width] = toRender[i+width]==bordersID ? bordersID : areolasID;
+	toRender[i+width-1] = toRender[i+width-1]==bordersID ? bordersID : areolasID;
+	toRender[i+width+1] = toRender[i+width+1]==bordersID ? bordersID : areolasID;
+
+	toRender[i-2] = toRender[i-2]==bordersID ? bordersID : areolasID;
+	toRender[i+2] = toRender[i+2]==bordersID ? bordersID : areolasID;
+
+	if (i-width-2>=0) {
+		toRender[i-width-2] = toRender[i-width-2]==bordersID ? bordersID : areolasID;
+	}
+	
+	if (i-width+2>=0) {
+		toRender[i-width+2] = toRender[i-width+2]==bordersID ? bordersID : areolasID;
+	}
+
+	if (i+width-2<toRender.length) {
+		toRender[i+width-2] = toRender[i+width-2]==bordersID ? bordersID : areolasID;
+	}
+	
+	if (i+width+2<toRender.length) {
+		toRender[i+width+2] = toRender[i+width+2]==bordersID ? bordersID : areolasID;
+	}
+
+
+	for (var rng = -1; rng<=1; rng++) {
+		if (i-width*2+rng>=0) {
+			toRender[i-width*2+rng] = toRender[i-width*2+rng]==bordersID ? bordersID : areolasID;
+		}
+	}
+
+	for (rng = -1; rng<=1; rng++) {
+		if (i+width*2+rng<toRender.length) {
+			toRender[i+width*2+rng] = toRender[i+width*2+rng]==bordersID ? bordersID : areolasID;
+		}
+	}	
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/*/ALL SCATTERING GLORY
 
 function Scatter(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, randomRotation) {
 
@@ -289,16 +637,6 @@ function Scatter(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, rando
 			}
 			
 			ap[arrPointer] = 1;
-			/*
-			ap[arrPointer-1] = 2;
-			ap[arrPointer+1] = 2;
-			ap[arrPointer-width] = 2;
-			ap[arrPointer-width-1] = 2;
-			ap[arrPointer-width+1] = 2;
-			ap[arrPointer+width] = 2;
-			ap[arrPointer+width-1] = 2;
-			ap[arrPointer+width+1] = 2;
-			*/
 			
 			
 		}
@@ -338,16 +676,6 @@ function ScatterPebble(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody,
 			}
 			
 			ap[arrPointer] = 1;
-			/*
-			ap[arrPointer-1] = 2;
-			ap[arrPointer+1] = 2;
-			ap[arrPointer-width] = 2;
-			ap[arrPointer-width-1] = 2;
-			ap[arrPointer-width+1] = 2;
-			ap[arrPointer+width] = 2;
-			ap[arrPointer+width-1] = 2;
-			ap[arrPointer+width+1] = 2;
-			*/
 			
 			
 		}
@@ -446,16 +774,6 @@ function ScatterGrass(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody, 
 			}
 			
 			ap[arrPointer] = 1;
-			/*
-			ap[arrPointer-1] = 2;
-			ap[arrPointer+1] = 2;
-			ap[arrPointer-width] = 2;
-			ap[arrPointer-width-1] = 2;
-			ap[arrPointer-width+1] = 2;
-			ap[arrPointer+width] = 2;
-			ap[arrPointer+width-1] = 2;
-			ap[arrPointer+width+1] = 2;
-			*/
 			
 			
 		}
@@ -502,16 +820,6 @@ function ScatterRabbits(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody
 			}
 			
 			ap[arrPointer] = 1;
-			/*
-			ap[arrPointer-1] = 2;
-			ap[arrPointer+1] = 2;
-			ap[arrPointer-width] = 2;
-			ap[arrPointer-width-1] = 2;
-			ap[arrPointer-width+1] = 2;
-			ap[arrPointer+width] = 2;
-			ap[arrPointer+width-1] = 2;
-			ap[arrPointer+width+1] = 2;
-			*/
 			
 			
 		}
@@ -520,6 +828,11 @@ function ScatterRabbits(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody
 	}
 	return scat;
 }
+
+
+
+*/
+
 
 /*Derived from
 Lengyel, Eric. Computing Tangent Space Basis Vectors for an Arbitrary Mesh. Terathon Software 3D Graphics Library, 2001.

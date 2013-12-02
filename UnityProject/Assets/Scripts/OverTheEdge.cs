@@ -18,6 +18,8 @@ public class OverTheEdge : MonoBehaviour {
     {
         if (other.tag == "NextTileTriggers")
         {
+            //MeshRenderer rend = GetComponent<MeshRenderer>();
+            //if(rend != null)rend.renderer.enabled = false;
             GetComponentsInChildren<MeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
             //Destroy(this);
         }

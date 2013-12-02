@@ -3,8 +3,10 @@ using System.Linq;
 
 namespace Assets.Scripts.InteractableBehaviour
 {
-    public class Awakening : MonoBehaviour {
+    public class Awakening : MonoBehaviour
+    {
 
+        public GameObject groundTile;
 
         // Use this for initialization
         void Start () {
