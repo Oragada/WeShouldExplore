@@ -15,7 +15,7 @@ public class PlayerController : MonoBehaviour {
 	
 	//publics
 	public float speed;
-	public ActiveTile actTile;
+	//public ActiveTile actTile;
 	public Material playerMat;
 	//public GroundGen groundGen;
 	
@@ -60,6 +60,7 @@ public class PlayerController : MonoBehaviour {
     private CarryObject Obj { get; set; }
     private List<Transform> carryList;
     public float fadeCarry;
+    public Transform bouquet;
     //Cam + Background
 	private Camera isoCam;
 	private Color background;
@@ -148,6 +149,7 @@ public class PlayerController : MonoBehaviour {
             changeTransparancy(fadeCarry, flower);
             fadeCarry -= Time.deltaTime;
         }
+
         if (fadeCarry <= 0)
         {
             fadeCarry = 0;
@@ -183,7 +185,11 @@ public class PlayerController : MonoBehaviour {
         {
             currentPressSit = false;
         }
-
+        bool gIn = Input.GetButton("g");
+        if (gIn)
+        {
+            PickUpObject(CarryObject.Nothing);
+        }
     }
 
     void Sit()
@@ -270,17 +276,12 @@ public class PlayerController : MonoBehaviour {
         if (progress <= FlowerBehaviour.RealFlowerPick & pickedObject == CarryObject.Flower)
         {
             fadeCarry = GetNewFadeCarryDuration();
-            Obj = pickedObject;
+            //Obj = pickedObject;
         }
-        else if (progress > FlowerBehaviour.RealFlowerPick || pickedObject != CarryObject.Flower)
+        else if (progress > FlowerBehaviour.RealFlowerPick || (pickedObject == CarryObject.Nothing && Obj == CarryObject.Bouquet))
         {
-
-            //Check combination
-            CarryObject nObj = CombineObject(pickedObject);
-
-
-            //Set CarryObject to new object
-            Obj = nObj;
+            //pickedObject == CarryObject.Nothing
+            ThrowBouquet();
         }
         //else
         //{
@@ -290,8 +291,13 @@ public class PlayerController : MonoBehaviour {
         //    Obj = nObj;
         //}
         //Fade out flower before 0.3
-        
 
+
+        //Check combination
+        CarryObject nObj = CombineObject(pickedObject);
+
+        //Set CarryObject to new object
+        Obj = nObj;
 
         SetCarryShow();
     }
@@ -353,6 +359,11 @@ public class PlayerController : MonoBehaviour {
         Transform newRend = carryList.FirstOrDefault(e => e.name == ObjName);
 
         newRend.gameObject.SetActive(true);
+    }
+
+    private void ThrowBouquet()
+    {
+        Instantiate(bouquet, carryList[0].position, new Quaternion());
     }
 
 	public static void SetLayerRecursively(GameObject go, int layerNumber)
