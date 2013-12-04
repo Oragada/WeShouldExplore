@@ -14,6 +14,7 @@ public class MenuController : MonoBehaviour {
 	private int selected = 0;
 	// Use this for initialization
 	void Start () {
+		Screen.showCursor = false;
 		tutorial = (TutorialGui)GameObject.Find("GUI").GetComponent("TutorialGui");
 		
 		elements = this.transform.FindChild("MenuElements").gameObject;
@@ -62,9 +63,13 @@ public class MenuController : MonoBehaviour {
 				menuAction();
 			}
 			//Debug.Log ( "selected"+selected);
+			tutorial.temporarilyHideCredits();
 		}
 		else
+		{
 			Time.timeScale = 1.0f; // continue the game
+			tutorial.temporarilyShowCredits();
+		}
 	}
 	private void menuAction()
 	{

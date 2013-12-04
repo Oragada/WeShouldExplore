@@ -46,6 +46,9 @@ public class PlayerController : MonoBehaviour {
 	private float distance = 0.1f;
 	private float duration = 1.0f;
 	private float elapsedTime = 0.0f;
+	private bool stopPlayerNow=false;
+	private float lastH = 0.0f;
+	private float lastV = 0.0f;
 	// Meshes
 	//private GameObject sittingPlayerMesh;
 	//private GameObject standingPlayerMesh;
@@ -101,10 +104,13 @@ public class PlayerController : MonoBehaviour {
 	void Update () {
 		if (dead)
 			return;
-		
+
 		// Cache the inputs.
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
+		if( h != lastH || v != lastV)
+			stopPlayerNow = false;
+		//Debug.Log (h.ToString()+ " "+ v.ToString()) ;
 		// changed the Axis gravity&sensitivity to 1000, for more direct input.
 		// for joystick usage however Vince told me to:
 		/* just duplicate Horizontal and use gravity 1, dead 0.2 and sensitivity 1 that it works*/		
@@ -122,8 +128,9 @@ public class PlayerController : MonoBehaviour {
 		}
 		
 		if ( !isSitting)
-		{			
-			Movement(v,h);
+		{	
+			if(!stopPlayerNow)
+				Movement(v,h);
 		}	
 		else
 		{
@@ -138,6 +145,8 @@ public class PlayerController : MonoBehaviour {
         {
             fadeCarryUpdate();
         }
+		lastH = h;
+		lastV = v;
 	}
 
     private void fadeCarryUpdate()
@@ -211,7 +220,7 @@ public class PlayerController : MonoBehaviour {
             transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f, +0.15f, 0.0f);
             StopSittingSound(currSittingTime);
             isSitting = false;
-            progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, currSittingTime);
+            //progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, currSittingTime);
             currSittingTime = 0.0f;
         }
     }
@@ -228,6 +237,10 @@ public class PlayerController : MonoBehaviour {
             gui.doneInteract();
             if (progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
                 progressMng.usedMechanic(ProgressManager.Mechanic.Interaction);
+			// stop players movement
+			stopPlayerNow = true;
+			lastDir = Direction.None;
+			elapsedTime = duration;
         }
     }
 
@@ -365,6 +378,8 @@ public class PlayerController : MonoBehaviour {
 
     private void checkProgress()
     {
+		if( isSitting)
+			progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, Time.deltaTime);
 		// compute new progress value:
 		progressMng.computeProgress();
 		progress = progressMng.getProgress();
@@ -749,7 +764,6 @@ public class PlayerController : MonoBehaviour {
 	{
 		dead = true;
 		// change mesh to lying 
-		Debug.Log ("die only once.");
 		animator.SetBool("dead", true );
 		// start Death sounds
 		PlayDeathSound();

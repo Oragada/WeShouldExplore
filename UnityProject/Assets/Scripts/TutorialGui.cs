@@ -4,7 +4,7 @@ using System.Collections;
 public enum Tutorials {none,move,sit,standup,interact,follow,firstTile,secondTile,endTutorial};
 
 public class TutorialGui : MonoBehaviour {
-	private string[] TutorialDescriptions = {"","Press <b>ArrowKeys</b> to move.",
+	private string[] TutorialDescriptions = {"","Press <b>W,A,S,D</b> to move.",
 		"Press <b>Q</b> to sit.",
 		"Press <b>Q</b> to stand up again.",
 		"Press <b>E</b> to interact.",
@@ -30,11 +30,13 @@ public class TutorialGui : MonoBehaviour {
 	private GameObject credits;
 	private GUIText textOverlay;
 	private GUITexture darkOverlay;
+	private GUITexture walkaway;
 	private GameObject currObj;
 	private bool shown = true;
 	private bool fade = false;
 	private float currentTime=0.0f;
 	private float fadeOutEndTutorial=5.0f;
+	private bool shouldShowCredits = false;
 
 	private Tutorials nextTut = Tutorials.none;
 	private Tutorials currTut = Tutorials.move;
@@ -50,9 +52,10 @@ public class TutorialGui : MonoBehaviour {
 		textOverlay.text = inStr;
 		GUIStyle style = new GUIStyle();
 		style.font = textOverlay.font;
-		
+		style.fontSize = 24;
+
 		Vector2 size = style.CalcSize(new GUIContent(textOverlay.text));
-		Rect newPixelInset = new Rect( -(size.x+38)/2, darkOverlay.pixelInset.y,size.x+40,darkOverlay.pixelInset.height);
+		Rect newPixelInset = new Rect( -(size.x+9)/2, darkOverlay.pixelInset.y,size.x+10,darkOverlay.pixelInset.height);
 		darkOverlay.pixelInset = newPixelInset;
 
 	}
@@ -222,8 +225,19 @@ public class TutorialGui : MonoBehaviour {
 		}
 
 	}
+	public void temporarilyShowCredits()
+	{
+		if(shouldShowCredits)
+			credits.SetActive(true);
+	}
+	public void temporarilyHideCredits()
+	{
+		if(shouldShowCredits)
+			credits.SetActive(false);
+	}
 	public void showCredits()
 	{		
+		shouldShowCredits = true;
 		credits.SetActive(true);
 		credits.guiTexture.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
 		StartCoroutine(DelayFadeIn(credits.guiTexture,1.0f));
