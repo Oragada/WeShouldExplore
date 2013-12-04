@@ -62,7 +62,6 @@ public class TutorialGui : MonoBehaviour {
 	}
 	void Update()
 	{
-		Debug.Log ( currTut.ToString()+ " "+nextTut.ToString()+ " " + fade.ToString() +" "+ tutFirstTileDone.ToString() );
 		if( fade )
 		{
 			currentTime += Time.deltaTime;
