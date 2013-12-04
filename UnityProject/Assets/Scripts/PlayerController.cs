@@ -619,8 +619,8 @@ public class PlayerController : MonoBehaviour {
 			gui.doneFollow();
 			if( gui.firstTileDone() )
 				gui.doneSecondTile();
-			else 
-				gui.doneFirstTile();
+			gui.doneFirstTile();
+
 
 			progressMng.usedMechanic(ProgressManager.Mechanic.Travel);
 
