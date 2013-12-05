@@ -9,7 +9,7 @@ using Assets.Scripts;
 //public enum for use in ActiveTile and WorldGeneration as well
 public enum Direction {North,South,East,West,None,NorthEast,NorthWest,SouthEast,SouthWest};
 public enum LayerList {Default,b,c,d,e,f,g,h,ignorePebbleCollision,withPebbleCollision};
-public enum CarryObject {Nothing, Flower, Bouquet, Leaf, Clear}
+public enum CarryObject {Nothing, Flower, Clear}
 
 public class PlayerController : MonoBehaviour {
 	
@@ -56,11 +56,6 @@ public class PlayerController : MonoBehaviour {
 	private AudioSource sittingSound;
 	private AudioSource dyingSound;
 	private float fadingSittingVolume;
-    //Carried object
-    private CarryObject Obj { get; set; }
-    private List<Transform> carryList;
-    public float fadeCarry;
-    public Transform bouquet;
     //Cam + Background
 	private Camera isoCam;
 	private Color background;
@@ -70,8 +65,12 @@ public class PlayerController : MonoBehaviour {
     //Currently Pressing Sit & Interact
     private bool currentPressSit = false;
     private bool currentPressInteract = false;
+    private bool currentPressG = false;
+    //Carry
+    public CarryElements Carry;
+    
 
-	//get the collider component once, because the GetComponent-call is expansive
+    //get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
 		//groundGen = this.GetComponent<GroundGen>;
@@ -82,10 +81,10 @@ public class PlayerController : MonoBehaviour {
 		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
 		interactionTooltip.text = "";
         //Obj = CarryObject.Nothing;
+	    //Carry = gameObject.GetComponentInChildren<CarryElements>();
 
-        carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
 		
-        PickUpObject(CarryObject.Nothing);
+        ////Carry.PickUpObject(CarryObject.Nothing, progress);
 		// find sounds
 		sittingSound = GameObject.Find("AudioSit").audio;
 		dyingSound = GameObject.Find("AudioDeath").audio;
@@ -135,33 +134,8 @@ public class PlayerController : MonoBehaviour {
 
 	    React();
 		animationHandling();
-        //if (progress <= FlowerBehaviour.RealFlowerPick)
-        {
-            fadeCarryUpdate();
-        }
+	    Carry.UpdateCarry(progress);
 	}
-
-    private void fadeCarryUpdate()
-    {
-        if (fadeCarry > 0)
-        {
-            Transform flower = carryList.First(e => e.name == "SingleFlower");
-            changeTransparancy(fadeCarry, flower);
-            fadeCarry -= Time.deltaTime;
-        }
-
-        if (fadeCarry <= 0)
-        {
-            fadeCarry = 0;
-            PickUpObject(CarryObject.Clear);
-        }
-    }
-
-    void changeTransparancy(float fadeRemain, Transform carryObject)
-    {
-        Color extColor = carryObject.renderer.material.color;
-        carryObject.renderer.material.color = new Color(extColor.r, extColor.g, extColor.b, (fadeRemain / 5));
-    }
 
     void Action()
     {
@@ -175,6 +149,7 @@ public class PlayerController : MonoBehaviour {
         {
             currentPressInteract = false;
         }
+
         bool pressSit = Input.GetButton("Sit");
         if (pressSit & !currentPressSit)
         {
@@ -185,11 +160,19 @@ public class PlayerController : MonoBehaviour {
         {
             currentPressSit = false;
         }
-        bool gIn = Input.GetButton("g");
-        if (gIn)
+
+        bool pressG = Input.GetKey(KeyCode.G);
+        if (pressG & !currentPressG)
         {
-            PickUpObject(CarryObject.Nothing);
+            //Carry.PickUpObject(CarryObject.Nothing, progress);
+            Carry.ThrowBouquet();
+            currentPressG = true;
         }
+        else if (!pressG & currentPressG)
+        {
+            currentPressG = false;
+        }
+
     }
 
     void Sit()
@@ -230,7 +213,11 @@ public class PlayerController : MonoBehaviour {
             animator.SetBool("picking", true);
 
             CarryObject co = closest.Activate(progress, ToPlayerPos(closest));
-            PickUpObject(co);
+            if (co == CarryObject.Flower)
+            {
+                Carry.PickFlower(progress);
+            }
+            //Carry.PickUpObject(co, progress);
             gui.doneInteract();
             if (progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
                 progressMng.usedMechanic(ProgressManager.Mechanic.Interaction);
@@ -269,101 +256,6 @@ public class PlayerController : MonoBehaviour {
         Vector3 toPlayerVec = (transform.position - actable.transform.position);
         toPlayerVec.y *= 0;
         return toPlayerVec;
-    }
-
-    public void PickUpObject(CarryObject pickedObject)
-    {
-        if (progress <= FlowerBehaviour.RealFlowerPick & pickedObject == CarryObject.Flower)
-        {
-            fadeCarry = GetNewFadeCarryDuration();
-            //Obj = pickedObject;
-        }
-        else if (progress > FlowerBehaviour.RealFlowerPick || (pickedObject == CarryObject.Nothing && Obj == CarryObject.Bouquet))
-        {
-            //pickedObject == CarryObject.Nothing
-            ThrowBouquet();
-        }
-        //else
-        //{
-        //    //Extreme jury-rigging
-        //    CarryObject nObj = CombineObject(pickedObject);
-        //    //Set CarryObject to new object
-        //    Obj = nObj;
-        //}
-        //Fade out flower before 0.3
-
-
-        //Check combination
-        CarryObject nObj = CombineObject(pickedObject);
-
-        //Set CarryObject to new object
-        Obj = nObj;
-
-        SetCarryShow();
-    }
-
-    private float GetNewFadeCarryDuration()
-    {
-        //0.0 => 2 sec
-        //0.3 => 5 sec
-        return 2 + (progress * 10);
-    }
-
-    private CarryObject CombineObject(CarryObject newObject)
-    {
-        switch (Obj)
-        {
-            case CarryObject.Clear:
-                return CarryObject.Nothing;
-            case CarryObject.Nothing:
-                return newObject;
-            case CarryObject.Bouquet:
-            case CarryObject.Flower:
-                switch (newObject)
-                {
-                    case CarryObject.Flower:
-                        return CarryObject.Bouquet;
-                    default:
-                        return Obj;
-                }
-            default:
-                return CarryObject.Nothing;
-        }
-    }
-
-    private void SetCarryShow()
-    {
-        string ObjName;
-
-        switch (Obj)
-        {
-            case CarryObject.Nothing:
-                ObjName = "Nothing";
-                break;
-            case CarryObject.Leaf:
-                ObjName = "Leaf";
-                break;
-            case CarryObject.Flower:
-                ObjName = "SingleFlower";
-                break;
-            case CarryObject.Bouquet:
-                ObjName = "Bouquet";
-                break;
-            default:
-                ObjName = "Nothing";
-                break;
-        }
-
-        carryList.ForEach(e => e.gameObject.SetActive(false));
-
-        Transform newRend = carryList.FirstOrDefault(e => e.name == ObjName);
-
-        newRend.gameObject.SetActive(true);
-    }
-
-    private void ThrowBouquet()
-    {
-        Instantiate(bouquet, carryList[0].position, new Quaternion());
     }
 
 	public static void SetLayerRecursively(GameObject go, int layerNumber)
@@ -486,7 +378,7 @@ public class PlayerController : MonoBehaviour {
 					break;
 			}		
 			lastDir = moved;			
-			Vector3 dir = checkForCollisions(moved);			
+			Vector3 dir = CheckForCollisions(moved);			
 			gameObject.transform.Translate(dir*Time.deltaTime*speed*0.1f); //move forward a step		
 			elapsedTime = 0.0f;
 		}
@@ -508,7 +400,8 @@ public class PlayerController : MonoBehaviour {
 			setPlayersYPosition();
 		}
 	}
-	private Vector3 checkForCollisions(Direction moved)
+	
+    private Vector3 CheckForCollisions(Direction moved)
 	{
 		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
 		float collSizePercent = progressMng.getValue(ProgressManager.Values.CollisionSizePercent);
@@ -531,6 +424,7 @@ public class PlayerController : MonoBehaviour {
 		}			
 		return ret;
 	}	
+    
     private void setPlayersYPosition()
 	{
 		float newYPos = gameObject.transform.position.y;
@@ -547,7 +441,8 @@ public class PlayerController : MonoBehaviour {
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
 	}	
-	public void channeledTriggerStay (Collider other)
+	
+    public void channeledTriggerStay (Collider other)
 	{
 		if( other.name == "CollisionCollider")
 		{			
@@ -558,6 +453,7 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 	}
+    
     public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -661,7 +557,8 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 	}
-	private InteractableBehaviour FindClosestInteractable()
+	
+    private InteractableBehaviour FindClosestInteractable()
 	{
 	    List<InteractableBehaviour> intera = inRangeElements.Where(e => e is InteractableBehaviour).Cast<InteractableBehaviour>().ToList();
 		if( intera.Count < 1)
@@ -746,7 +643,7 @@ public class PlayerController : MonoBehaviour {
             GUI.Label(new Rect(x, y + 220, 100, 20), "Debug:");
             //GUI.Label(new Rect(x, y + 240, 200, 20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
             //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements.OfType<RabbitGroupBehavior>().Count().ToString(CultureInfo.InvariantCulture));
-            GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
+            GUI.Label(new Rect(x, y + 240, 100, 20), Carry.carryList.Count.ToString(CultureInfo.InvariantCulture));
 
             if (test > 1.5f)
                 movementMode = 2;
@@ -814,6 +711,3 @@ public class PlayerController : MonoBehaviour {
 		dyingSound.Play();
 	}
 }
-
-
-
