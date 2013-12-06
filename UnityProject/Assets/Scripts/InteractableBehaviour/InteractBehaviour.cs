@@ -35,7 +35,29 @@ namespace Assets.Scripts.InteractableBehaviour
 
     public abstract class ReactableBehaviour : ActableBehaviour
     {
-        public abstract void React(float playerProgress, Vector3 playerPos);
+        protected AnimalBehaviour Behaviour;
+        public bool PlayerInRange = false;
+        public Vector3 PlayerPos; // { get; set; }
+        public float Speed = 3.5f;
+        public float Decel = -0.1f;
+        public float CurrentSpeed = 0f;
+
+        protected ReactableBehaviour()
+        {
+            Behaviour = AnimalBehaviour.Ignore; 
+        }
+
+        public virtual void React(float playerProgress, Vector3 playerPos)
+        {
+
+            PlayerInRange = true;
+            PlayerPos = playerPos;
+        }
+
+        public void Deactivate()
+        {
+            PlayerInRange = false;
+        }
     }
 
     public abstract class InteractableBehaviour : ActableBehaviour

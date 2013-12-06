@@ -9,13 +9,13 @@ using Assets.Scripts;
 //public enum for use in ActiveTile and WorldGeneration as well
 public enum Direction {North,South,East,West,None,NorthEast,NorthWest,SouthEast,SouthWest};
 public enum LayerList {Default,b,c,d,e,f,g,h,ignorePebbleCollision,withPebbleCollision};
-public enum CarryObject {Nothing, Flower, Bouquet, Leaf, Clear}
+public enum CarryObject {Nothing, Flower, Clear,Berry}
 
 public class PlayerController : MonoBehaviour {
 	
 	//publics
 	public float speed;
-	public ActiveTile actTile;
+	//public ActiveTile actTile;
 	public Material playerMat;
 	//public GroundGen groundGen;
 	
@@ -46,6 +46,9 @@ public class PlayerController : MonoBehaviour {
 	private float distance = 0.1f;
 	private float duration = 1.0f;
 	private float elapsedTime = 0.0f;
+	private bool stopPlayerNow=false;
+	private float lastH = 0.0f;
+	private float lastV = 0.0f;
 	// Meshes
 	//private GameObject sittingPlayerMesh;
 	//private GameObject standingPlayerMesh;
@@ -56,10 +59,6 @@ public class PlayerController : MonoBehaviour {
 	private AudioSource sittingSound;
 	private AudioSource dyingSound;
 	private float fadingSittingVolume;
-    //Carried object
-    private CarryObject Obj { get; set; }
-    private List<Transform> carryList;
-    public float fadeCarry;
     //Cam + Background
 	private Camera isoCam;
 	private Color background;
@@ -69,8 +68,12 @@ public class PlayerController : MonoBehaviour {
     //Currently Pressing Sit & Interact
     private bool currentPressSit = false;
     private bool currentPressInteract = false;
+    private bool currentPressG = false;
+    //Carry
+    public CarryElements Carry;
+    
 
-	//get the collider component once, because the GetComponent-call is expansive
+    //get the collider component once, because the GetComponent-call is expansive
 	void Awake()
 	{
 		//groundGen = this.GetComponent<GroundGen>;
@@ -80,11 +83,9 @@ public class PlayerController : MonoBehaviour {
 		progressMng = (ProgressManager)GameObject.Find("Progression").GetComponent("ProgressManager");
 		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
 		interactionTooltip.text = "";
-        //Obj = CarryObject.Nothing;
+	    //Carry = gameObject.GetComponentInChildren<CarryElements>();
 
-        carryList = GetComponentsInChildren<Transform>().Where(e => e.tag == "CarryObject").ToList();
 		
-        PickUpObject(CarryObject.Nothing);
 		// find sounds
 		sittingSound = GameObject.Find("AudioSit").audio;
 		dyingSound = GameObject.Find("AudioDeath").audio;
@@ -101,10 +102,13 @@ public class PlayerController : MonoBehaviour {
 	void Update () {
 		if (dead)
 			return;
-		
+
 		// Cache the inputs.
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
+		if( h != lastH || v != lastV)
+			stopPlayerNow = false;
+		//Debug.Log (h.ToString()+ " "+ v.ToString()) ;
 		// changed the Axis gravity&sensitivity to 1000, for more direct input.
 		// for joystick usage however Vince told me to:
 		/* just duplicate Horizontal and use gravity 1, dead 0.2 and sensitivity 1 that it works*/		
@@ -122,8 +126,9 @@ public class PlayerController : MonoBehaviour {
 		}
 		
 		if ( !isSitting)
-		{			
-			Movement(v,h);
+		{	
+			if(!stopPlayerNow)
+				Movement(v,h);
 		}	
 		else
 		{
@@ -134,32 +139,10 @@ public class PlayerController : MonoBehaviour {
 
 	    React();
 		animationHandling();
-        //if (progress <= FlowerBehaviour.RealFlowerPick)
-        {
-            fadeCarryUpdate();
-        }
+	    Carry.UpdateCarry(progress);
+		lastH = h;
+		lastV = v;
 	}
-
-    private void fadeCarryUpdate()
-    {
-        if (fadeCarry > 0)
-        {
-            Transform flower = carryList.First(e => e.name == "SingleFlower");
-            changeTransparancy(fadeCarry, flower);
-            fadeCarry -= Time.deltaTime;
-        }
-        if (fadeCarry <= 0)
-        {
-            fadeCarry = 0;
-            PickUpObject(CarryObject.Clear);
-        }
-    }
-
-    void changeTransparancy(float fadeRemain, Transform carryObject)
-    {
-        Color extColor = carryObject.renderer.material.color;
-        carryObject.renderer.material.color = new Color(extColor.r, extColor.g, extColor.b, (fadeRemain / 5));
-    }
 
     void Action()
     {
@@ -173,6 +156,7 @@ public class PlayerController : MonoBehaviour {
         {
             currentPressInteract = false;
         }
+
         bool pressSit = Input.GetButton("Sit");
         if (pressSit & !currentPressSit)
         {
@@ -182,6 +166,18 @@ public class PlayerController : MonoBehaviour {
         else if (!pressSit & currentPressSit)
         {
             currentPressSit = false;
+        }
+
+        bool pressG = Input.GetKey(KeyCode.G);
+        if (pressG & !currentPressG)
+        {
+
+            Carry.ThrowBouquet();
+            currentPressG = true;
+        }
+        else if (!pressG & currentPressG)
+        {
+            currentPressG = false;
         }
 
     }
@@ -211,7 +207,7 @@ public class PlayerController : MonoBehaviour {
             transform.FindChild("CarryingPosition").gameObject.transform.Translate(0.0f, +0.15f, 0.0f);
             StopSittingSound(currSittingTime);
             isSitting = false;
-            progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, currSittingTime);
+            //progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, currSittingTime);
             currSittingTime = 0.0f;
         }
     }
@@ -224,10 +220,22 @@ public class PlayerController : MonoBehaviour {
             animator.SetBool("picking", true);
 
             CarryObject co = closest.Activate(progress, ToPlayerPos(closest));
-            PickUpObject(co);
+            if (co == CarryObject.Flower)
+            {
+                Carry.PickFlower(progress);
+            }
+            if (co == CarryObject.Berry)
+            {
+                Carry.EatBerry(progress);
+            }
+            //Carry.PickUpObject(co, progress);
             gui.doneInteract();
             if (progress >= THRESH_FOR_TRUE_INTERACTION_TO_COUNT)
                 progressMng.usedMechanic(ProgressManager.Mechanic.Interaction);
+			// stop players movement
+			stopPlayerNow = true;
+			lastDir = Direction.None;
+			elapsedTime = duration;
         }
     }
 
@@ -265,96 +273,6 @@ public class PlayerController : MonoBehaviour {
         return toPlayerVec;
     }
 
-    public void PickUpObject(CarryObject pickedObject)
-    {
-        if (progress <= FlowerBehaviour.RealFlowerPick & pickedObject == CarryObject.Flower)
-        {
-            fadeCarry = GetNewFadeCarryDuration();
-            Obj = pickedObject;
-        }
-        else if (progress > FlowerBehaviour.RealFlowerPick || pickedObject != CarryObject.Flower)
-        {
-
-            //Check combination
-            CarryObject nObj = CombineObject(pickedObject);
-
-
-            //Set CarryObject to new object
-            Obj = nObj;
-        }
-        //else
-        //{
-        //    //Extreme jury-rigging
-        //    CarryObject nObj = CombineObject(pickedObject);
-        //    //Set CarryObject to new object
-        //    Obj = nObj;
-        //}
-        //Fade out flower before 0.3
-        
-
-
-        SetCarryShow();
-    }
-
-    private float GetNewFadeCarryDuration()
-    {
-        //0.0 => 2 sec
-        //0.3 => 5 sec
-        return 2 + (progress * 10);
-    }
-
-    private CarryObject CombineObject(CarryObject newObject)
-    {
-        switch (Obj)
-        {
-            case CarryObject.Clear:
-                return CarryObject.Nothing;
-            case CarryObject.Nothing:
-                return newObject;
-            case CarryObject.Bouquet:
-            case CarryObject.Flower:
-                switch (newObject)
-                {
-                    case CarryObject.Flower:
-                        return CarryObject.Bouquet;
-                    default:
-                        return Obj;
-                }
-            default:
-                return CarryObject.Nothing;
-        }
-    }
-
-    private void SetCarryShow()
-    {
-        string ObjName;
-
-        switch (Obj)
-        {
-            case CarryObject.Nothing:
-                ObjName = "Nothing";
-                break;
-            case CarryObject.Leaf:
-                ObjName = "Leaf";
-                break;
-            case CarryObject.Flower:
-                ObjName = "SingleFlower";
-                break;
-            case CarryObject.Bouquet:
-                ObjName = "Bouquet";
-                break;
-            default:
-                ObjName = "Nothing";
-                break;
-        }
-
-        carryList.ForEach(e => e.gameObject.SetActive(false));
-
-        Transform newRend = carryList.FirstOrDefault(e => e.name == ObjName);
-
-        newRend.gameObject.SetActive(true);
-    }
-
 	public static void SetLayerRecursively(GameObject go, int layerNumber)
 	{
 		foreach (Transform trans in go.GetComponentsInChildren<Transform>(true))
@@ -365,6 +283,8 @@ public class PlayerController : MonoBehaviour {
 
     private void checkProgress()
     {
+		if( isSitting)
+			progressMng.usedMechanic(ProgressManager.Mechanic.Sitting, Time.deltaTime);
 		// compute new progress value:
 		progressMng.computeProgress();
 		progress = progressMng.getProgress();
@@ -475,7 +395,7 @@ public class PlayerController : MonoBehaviour {
 					break;
 			}		
 			lastDir = moved;			
-			Vector3 dir = checkForCollisions(moved);			
+			Vector3 dir = CheckForCollisions(moved);			
 			gameObject.transform.Translate(dir*Time.deltaTime*speed*0.1f); //move forward a step		
 			elapsedTime = 0.0f;
 		}
@@ -497,7 +417,8 @@ public class PlayerController : MonoBehaviour {
 			setPlayersYPosition();
 		}
 	}
-	private Vector3 checkForCollisions(Direction moved)
+	
+    private Vector3 CheckForCollisions(Direction moved)
 	{
 		Vector3 ret = new Vector3(1.0f,0.0f,0.0f);
 		float collSizePercent = progressMng.getValue(ProgressManager.Values.CollisionSizePercent);
@@ -520,6 +441,7 @@ public class PlayerController : MonoBehaviour {
 		}			
 		return ret;
 	}	
+    
     private void setPlayersYPosition()
 	{
 		float newYPos = gameObject.transform.position.y;
@@ -536,7 +458,8 @@ public class PlayerController : MonoBehaviour {
 			gameObject.transform.Translate(new Vector3(0.0f,newYPos-gameObject.transform.position.y+0.585f,0.0f));
 	
 	}	
-	public void channeledTriggerStay (Collider other)
+	
+    public void channeledTriggerStay (Collider other)
 	{
 		if( other.name == "CollisionCollider")
 		{			
@@ -547,6 +470,7 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 	}
+    
     public void channeledTriggerEnter (Collider other)
 	{
 		if( other.gameObject.tag == "NextTileTriggers")
@@ -604,8 +528,8 @@ public class PlayerController : MonoBehaviour {
 			gui.doneFollow();
 			if( gui.firstTileDone() )
 				gui.doneSecondTile();
-			else 
-				gui.doneFirstTile();
+			gui.doneFirstTile();
+
 
 			progressMng.usedMechanic(ProgressManager.Mechanic.Travel);
 
@@ -650,7 +574,8 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 	}
-	private InteractableBehaviour FindClosestInteractable()
+	
+    private InteractableBehaviour FindClosestInteractable()
 	{
 	    List<InteractableBehaviour> intera = inRangeElements.Where(e => e is InteractableBehaviour).Cast<InteractableBehaviour>().ToList();
 		if( intera.Count < 1)
@@ -692,18 +617,22 @@ public class PlayerController : MonoBehaviour {
 	}
 	
     public void channeledTriggerExit(Collider other)
-	{
-		if( other.gameObject.tag == "Interactable")
-		{
-            ActableBehaviour removeThis = other.GetComponent<ActableBehaviour>();
-            if (removeThis.GetType() == typeof(RabbitGroupBehavior))
-            {
-                ((RabbitGroupBehavior)removeThis).Deactivate();
-            }
-			inRangeElements.Remove(removeThis);
+    {
+        switch (other.gameObject.tag)
+        {
+            case "Interactable":
+                {
+                    ActableBehaviour removeThis = other.GetComponent<ActableBehaviour>();
+                    if (removeThis.GetType() == typeof(ReactableBehaviour))
+                    {
+                        ((ReactableBehaviour)removeThis).Deactivate();
+                    }
+                    inRangeElements.Remove(removeThis);
 
-		}		
-	}
+                }
+                break;
+        }
+    }
 
     void OnGUI()
     {
@@ -735,7 +664,7 @@ public class PlayerController : MonoBehaviour {
             GUI.Label(new Rect(x, y + 220, 100, 20), "Debug:");
             //GUI.Label(new Rect(x, y + 240, 200, 20), inRangeElements.Count.ToString(CultureInfo.InvariantCulture));
             //GUI.Label(new Rect(x, y + 200, 200, 20), inRangeElements.OfType<RabbitGroupBehavior>().Count().ToString(CultureInfo.InvariantCulture));
-            GUI.Label(new Rect(x, y + 240, 100, 20), Obj.ToString());
+            GUI.Label(new Rect(x, y + 240, 100, 20), Carry.carryList.Count.ToString(CultureInfo.InvariantCulture));
 
             if (test > 1.5f)
                 movementMode = 2;
@@ -749,7 +678,6 @@ public class PlayerController : MonoBehaviour {
 	{
 		dead = true;
 		// change mesh to lying 
-		Debug.Log ("die only once.");
 		animator.SetBool("dead", true );
 		// start Death sounds
 		PlayDeathSound();
@@ -803,6 +731,3 @@ public class PlayerController : MonoBehaviour {
 		dyingSound.Play();
 	}
 }
-
-
-

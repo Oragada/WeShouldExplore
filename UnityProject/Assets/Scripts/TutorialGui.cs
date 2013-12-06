@@ -4,7 +4,7 @@ using System.Collections;
 public enum Tutorials {none,move,sit,standup,interact,follow,firstTile,secondTile,endTutorial};
 
 public class TutorialGui : MonoBehaviour {
-	private string[] TutorialDescriptions = {"","Press <b>ArrowKeys</b> to move.",
+	private string[] TutorialDescriptions = {"","Press <b>W,A,S,D</b> to move.",
 		"Press <b>Q</b> to sit.",
 		"Press <b>Q</b> to stand up again.",
 		"Press <b>E</b> to interact.",
@@ -30,11 +30,13 @@ public class TutorialGui : MonoBehaviour {
 	private GameObject credits;
 	private GUIText textOverlay;
 	private GUITexture darkOverlay;
+	private GameObject walkaway;
 	private GameObject currObj;
 	private bool shown = true;
 	private bool fade = false;
 	private float currentTime=0.0f;
 	private float fadeOutEndTutorial=5.0f;
+	private bool shouldShowCredits = false;
 
 	private Tutorials nextTut = Tutorials.none;
 	private Tutorials currTut = Tutorials.move;
@@ -43,6 +45,7 @@ public class TutorialGui : MonoBehaviour {
 		textOverlay = transform.FindChild("TextOverlay").gameObject.transform.FindChild("Text").guiText;
 		darkOverlay = transform.FindChild("TextOverlay").gameObject.transform.FindChild("DarkOverlay").guiTexture;
 		credits = transform.FindChild("Credits").gameObject;
+		walkaway = transform.FindChild("walkaway").gameObject;
 		Restart();
 	}
 	private void resetTextOverlay( string inStr )
@@ -50,9 +53,10 @@ public class TutorialGui : MonoBehaviour {
 		textOverlay.text = inStr;
 		GUIStyle style = new GUIStyle();
 		style.font = textOverlay.font;
-		
+		style.fontSize = 24;
+
 		Vector2 size = style.CalcSize(new GUIContent(textOverlay.text));
-		Rect newPixelInset = new Rect( -(size.x+38)/2, darkOverlay.pixelInset.y,size.x+40,darkOverlay.pixelInset.height);
+		Rect newPixelInset = new Rect( -(size.x+9)/2, darkOverlay.pixelInset.y,size.x+10,darkOverlay.pixelInset.height);
 		darkOverlay.pixelInset = newPixelInset;
 
 	}
@@ -86,7 +90,9 @@ public class TutorialGui : MonoBehaviour {
 		{
 			fadeOutEndTutorial-=Time.deltaTime;
 			if ( fadeOutEndTutorial < 0.0f)
-				doneTutorial();
+			{
+				fadeOutWalkaway();
+			}
 		}
 	}
 	public void Restart()
@@ -108,6 +114,7 @@ public class TutorialGui : MonoBehaviour {
 		nextTut = Tutorials.none;
 		currTut = Tutorials.move;
 		credits.SetActive(false);
+		walkaway.SetActive(false);
 		resetTextOverlay(TutorialDescriptions[(int)currTut]);
 	}
 
@@ -134,6 +141,11 @@ public class TutorialGui : MonoBehaviour {
 	{
 		if( nextTut == Tutorials.none)
 			return;
+		if( nextTut == Tutorials.endTutorial )
+		{
+			currTut = Tutorials.endTutorial;
+			nextTut = Tutorials.none;
+		}
 		if((nextTut == Tutorials.interact && tutInteractDone) // break off fade in if it changes during the fade in
 			||(nextTut == Tutorials.sit && tutSitDone) 
 			|| (nextTut == Tutorials.standup && tutStandUpDone))
@@ -160,9 +172,9 @@ public class TutorialGui : MonoBehaviour {
 		textOverlay.color = newTextColor;
 	}
 	public void doneMove()		{ tutMoveDone=true; 	 if(currTut==Tutorials.move){ fade = true;nextTut=Tutorials.firstTile;}}
-	public void doneFirstTile()	{ tutFirstTileDone = true;if(currTut==Tutorials.firstTile) { fade = true;nextTut=Tutorials.interact;}}	
+	public void doneFirstTile()	{ if(currTut==Tutorials.firstTile) { tutFirstTileDone = true; fade = true;nextTut=Tutorials.interact;}}	
 	public void doneInteract()	{ tutInteractDone = true; if(currTut==Tutorials.interact) { fade = true;nextTut=Tutorials.secondTile;}}
-	public void doneSecondTile(){ tutSecondFirstTileDone = true; if(currTut==Tutorials.secondTile) { fade = true;nextTut=Tutorials.sit;}}
+	public void doneSecondTile(){ if(currTut==Tutorials.secondTile) { tutSecondFirstTileDone = true; fade = true;nextTut=Tutorials.sit;}}
 	public void doneSit()		{ tutSitDone = true; 	 if(currTut==Tutorials.sit) { fade = true;nextTut=Tutorials.standup;}}
 	public void doneStandingUp(){ tutStandUpDone = true; if(currTut==Tutorials.standup) { fade = true;nextTut=Tutorials.endTutorial;}}
 	public void doneTutorial(){ tutDone = true; if(currTut==Tutorials.endTutorial) { fade = true;nextTut=Tutorials.none;}}
@@ -211,8 +223,12 @@ public class TutorialGui : MonoBehaviour {
 		}
 		else if(!tutDone)
 		{
+			//nextTut = Tutorials.endTutorial;
+			//fade = true;
+			//return;
+			
 			nextTut = Tutorials.endTutorial;
-			fade = true;
+			fadeInWalkaway();
 			return;
 		}
 		else
@@ -222,8 +238,32 @@ public class TutorialGui : MonoBehaviour {
 		}
 
 	}
+	private void fadeOutWalkaway()
+	{
+		walkaway.SetActive(true);
+		walkaway.guiTexture.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+		StartCoroutine(Fade.use.Alpha(walkaway.guiTexture, 1.0f, 0.0f, 3.0f));		
+		currTut = Tutorials.none;
+	}
+	private void fadeInWalkaway()
+	{		
+		walkaway.SetActive(true);
+		walkaway.guiTexture.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
+		StartCoroutine(Fade.use.Alpha(walkaway.guiTexture, 0.0f, 1.0f, 3.0f));		
+	}
+	public void temporarilyShowCredits()
+	{
+		if(shouldShowCredits)
+			credits.SetActive(true);
+	}
+	public void temporarilyHideCredits()
+	{
+		if(shouldShowCredits)
+			credits.SetActive(false);
+	}
 	public void showCredits()
 	{		
+		shouldShowCredits = true;
 		credits.SetActive(true);
 		credits.guiTexture.color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
 		StartCoroutine(DelayFadeIn(credits.guiTexture,1.0f));
