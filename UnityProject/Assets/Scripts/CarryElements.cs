@@ -207,6 +207,12 @@ public class CarryElements : MonoBehaviour {
         carryList.Add(flower);
     }
 
+    public void EatBerry(float progress)
+    {
+        //TODO: Implement
+        throw new System.NotImplementedException();
+    }
+
     private float GetNextAngle()
     {
         currentRot += ADD_ROT;
@@ -229,5 +235,4 @@ public class CarryElements : MonoBehaviour {
         ClearFlowers();
         Instantiate(TBouquet, transform.position, new Quaternion());
     }
-
 }

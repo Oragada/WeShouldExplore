@@ -9,7 +9,7 @@ using Assets.Scripts;
 //public enum for use in ActiveTile and WorldGeneration as well
 public enum Direction {North,South,East,West,None,NorthEast,NorthWest,SouthEast,SouthWest};
 public enum LayerList {Default,b,c,d,e,f,g,h,ignorePebbleCollision,withPebbleCollision};
-public enum CarryObject {Nothing, Flower, Clear}
+public enum CarryObject {Nothing, Flower, Clear,Berry}
 
 public class PlayerController : MonoBehaviour {
 	
@@ -83,11 +83,9 @@ public class PlayerController : MonoBehaviour {
 		progressMng = (ProgressManager)GameObject.Find("Progression").GetComponent("ProgressManager");
 		interactionTooltip = GameObject.Find("ContextSensitiveInteractionText").guiText;
 		interactionTooltip.text = "";
-        //Obj = CarryObject.Nothing;
 	    //Carry = gameObject.GetComponentInChildren<CarryElements>();
 
 		
-        ////Carry.PickUpObject(CarryObject.Nothing, progress);
 		// find sounds
 		sittingSound = GameObject.Find("AudioSit").audio;
 		dyingSound = GameObject.Find("AudioDeath").audio;
@@ -173,7 +171,7 @@ public class PlayerController : MonoBehaviour {
         bool pressG = Input.GetKey(KeyCode.G);
         if (pressG & !currentPressG)
         {
-            //Carry.PickUpObject(CarryObject.Nothing, progress);
+
             Carry.ThrowBouquet();
             currentPressG = true;
         }
@@ -225,6 +223,10 @@ public class PlayerController : MonoBehaviour {
             if (co == CarryObject.Flower)
             {
                 Carry.PickFlower(progress);
+            }
+            if (co == CarryObject.Berry)
+            {
+                Carry.EatBerry(progress);
             }
             //Carry.PickUpObject(co, progress);
             gui.doneInteract();
@@ -615,18 +617,22 @@ public class PlayerController : MonoBehaviour {
 	}
 	
     public void channeledTriggerExit(Collider other)
-	{
-		if( other.gameObject.tag == "Interactable")
-		{
-            ActableBehaviour removeThis = other.GetComponent<ActableBehaviour>();
-            if (removeThis.GetType() == typeof(RabbitGroupBehavior))
-            {
-                ((RabbitGroupBehavior)removeThis).Deactivate();
-            }
-			inRangeElements.Remove(removeThis);
+    {
+        switch (other.gameObject.tag)
+        {
+            case "Interactable":
+                {
+                    ActableBehaviour removeThis = other.GetComponent<ActableBehaviour>();
+                    if (removeThis.GetType() == typeof(ReactableBehaviour))
+                    {
+                        ((ReactableBehaviour)removeThis).Deactivate();
+                    }
+                    inRangeElements.Remove(removeThis);
 
-		}		
-	}
+                }
+                break;
+        }
+    }
 
     void OnGUI()
     {

@@ -3,21 +3,16 @@ using UnityEngine;
 using System.Collections;
 using System.Linq;
 
-public enum RabbitBehaviour{Ignore, Observe, Move, Flee}
+public enum AnimalBehaviour{Ignore, Observe, Curious, Move, Flee}
 
 public class RabbitGroupBehavior : ReactableBehaviour
 {
-	public RabbitBehaviour Behaviour; //{ get; private set; }
-    public Vector3 PlayerPos; // { get; set; }
-	public bool PlayerInRange = false;
-	public float Speed = 3.5f;
+	//public AnimalBehaviour Behaviour; //{ get; private set; }
 	//private Vector3 initialFace;
-	public float CurrentSpeed = 0f;
-	public float Decel = -0.05f;
 
-	public RabbitGroupBehavior()
+    public RabbitGroupBehavior()
 	{
-		Behaviour = RabbitBehaviour.Ignore; 
+	    //base();
 	}
 
 
@@ -40,13 +35,14 @@ public class RabbitGroupBehavior : ReactableBehaviour
 		{
 			switch (Behaviour)
 			{
-				case RabbitBehaviour.Ignore:
+				case AnimalBehaviour.Ignore:
 					break;
-				case RabbitBehaviour.Observe:
+				case AnimalBehaviour.Observe:
+                case AnimalBehaviour.Curious:
 					GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Look(PlayerPos + transform.position));
 					break;
-				case RabbitBehaviour.Move:
-				case RabbitBehaviour.Flee:
+				case AnimalBehaviour.Move:
+				case AnimalBehaviour.Flee:
                     GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Look(PlayerPos * -1 + transform.position));
 					CurrentSpeed = Speed;
 					break;
@@ -58,15 +54,16 @@ public class RabbitGroupBehavior : ReactableBehaviour
 		{
 			switch (Behaviour)
 			{
-				case RabbitBehaviour.Ignore:
+				case AnimalBehaviour.Ignore:
 					break;
-				case RabbitBehaviour.Observe:
+				case AnimalBehaviour.Observe:
+                case AnimalBehaviour.Curious:
 					GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Bliss());
 					break;
-				case RabbitBehaviour.Move:
+				case AnimalBehaviour.Move:
 					if (CurrentSpeed > 0) { CurrentSpeed += Decel; }
 					break;
-				case RabbitBehaviour.Flee:
+				case AnimalBehaviour.Flee:
 					break;
 			}
 		}
@@ -79,33 +76,29 @@ public class RabbitGroupBehavior : ReactableBehaviour
 		transform.position += (move * CurrentSpeed * Time.deltaTime);
 	}
 
-	public void Deactivate()
-	{
-		//GetComponentsInChildren<RabbitMovement>().ToList().ForEach(e => e.Deactivate(Behaviour));
-		PlayerInRange = false;
-
-	}
-
     public override void React(float playerProgress, Vector3 playerPos)
     {
-        PlayerInRange = true;
-        PlayerPos = playerPos;
+        base.React(playerProgress,playerPos);
 
         if (playerProgress < 0.1f)
         {
-            Behaviour = RabbitBehaviour.Ignore;
+            Behaviour = AnimalBehaviour.Ignore;
         }
-        else if (playerProgress < 0.3f)
+        else if (playerProgress < 0.25f)
         {
-            Behaviour = RabbitBehaviour.Observe;
+            Behaviour = AnimalBehaviour.Observe;
         }
-        else if (playerProgress < 0.7f)
+        else if (playerProgress < 0.75f)
         {
-            Behaviour = RabbitBehaviour.Move;
+            Behaviour = AnimalBehaviour.Curious;
+        }
+        else if (playerProgress < 0.9f)
+        {
+            Behaviour = AnimalBehaviour.Move;
         }
         else
         {
-            Behaviour = RabbitBehaviour.Flee;
+            Behaviour = AnimalBehaviour.Flee;
         }
     }
 }
