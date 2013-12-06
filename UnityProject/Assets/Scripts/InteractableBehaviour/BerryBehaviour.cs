@@ -1,6 +1,8 @@
-﻿using Assets.Scripts.InteractableBehaviour;
+﻿using System.Collections.Generic;
+using Assets.Scripts.InteractableBehaviour;
 using UnityEngine;
 using System.Collections;
+using System.Linq;
 
 public class BerryBehaviour : InteractableBehaviour {
 
@@ -18,14 +20,14 @@ public class BerryBehaviour : InteractableBehaviour {
 
 	public override CarryObject Activate(float playerProgress, Vector3 playerPos)
 	{
-
-        if (!berriesTaken )//& playerProgress <= RealFlowerPick)
+        /*
+        if (berriesTaken)//& playerProgress <= RealFlowerPick)
 		{
 			//fade = GetNewFadeDuration(playerProgress);
-			return CarryObject.Flower;
-		}
+			return CarryObject.Nothing;
+		}*/
 
-        if (!berriesTaken )//&& playerProgress > RealFlowerPick)
+        if (!berriesTaken)//&& playerProgress > RealFlowerPick)
 		{
 			//isActive = !isActive;
             berriesTaken = true;
@@ -44,7 +46,11 @@ public class BerryBehaviour : InteractableBehaviour {
 
     private void RemoveBerries()
     {
-        throw new System.NotImplementedException();
+        List<Transform> list = gameObject.GetComponentsInChildren<Transform>().Where(e => e.gameObject.tag == "Berry").ToList();
+        foreach (Transform go in list)
+        {
+            go.gameObject.SetActive(false);
+        }
     }
 
     public override string customInteractiveText()
