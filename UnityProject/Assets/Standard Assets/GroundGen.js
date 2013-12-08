@@ -27,6 +27,7 @@ var scaleDetail = 0.72;																		//Noise scale
 
 
 var flower : GameObject;																	//Tile Offsets
+var shroom : GameObject;
 var bush : GameObject;
 var pebble : GameObject;
 var rabbits : GameObject;
@@ -50,10 +51,11 @@ var treesID;
 var areolasID;
 var bushesID;
 var flowersID;
-var shroomsID;
 var animalsID;
 var pebblesID;
 var grassID;
+var shroomsID;
+var underTreeID;
 
 var renderedInstances = new Array();
 
@@ -85,6 +87,8 @@ function Start() {																			//-----Start-----//
 	animalsID = 6;
 	pebblesID = 7;
 	grassID = 8;
+	shroomsID = 9;
+	underTreeID = 10;
 
 	
 	tileChangeFlag = 0;
@@ -224,17 +228,6 @@ function GenerateGround() {																	//-----GenerateGround-----//
 		for(var x=0;x<width;x++) {
 		
 			vertices[i++] = Vector3(x,0,y);
-
-																								// my tangents solution - didn't work		
-																								// 			var vertexL = Vector3( x-1, 0, y );
-																								// 			var vertexR = Vector3( x+1, 0, y );
-																								//	
-																								// 			var tan = Vector3.Scale( Vector3(1,1,1), vertexR - vertexL ).normalized;
-																								// 			tangents[i-1] = Vector4( tan.x, tan.y, tan.z, 1 );
-																								// 
-																								// 			var tan = vertexR - vertexL;
-																								// 			tan = tan.normalized;
-																								//  		tangents[i-1] = Vector4( tan.x, tan.y, tan.z, -1 );
 			
 		}
 	}
@@ -349,12 +342,17 @@ function ProbabilityScatter() {																//-------ProbabilityScatter------
 
 	var toRender = new Array();
 	
-	var treeProb = 0.1;																			//Probabilities
+	var treeProb = 0.5;																			//Probabilities
 	var bushProb = 0.1;
-	var grassProb = 0.6;
-	var pebbleProb = 0.4;
-	var flowerProb = 0.3;
+	var grassProb = 0.3;
+	var pebbleProb = 0.1;
+	var flowerProb = 0.6;
 	
+	var animalProb = 0.005;
+	
+	var shroomProb = 0.001;
+	var shroomTreeProb = 1;
+	var shroomCounter = 0;
 	
 	var index = 0;																				//Fill borders with -1 so nothing can spawn there
 	for (var c=0; c < height; c++) {
@@ -376,12 +374,19 @@ function ProbabilityScatter() {																//-------ProbabilityScatter------
 	for (i=0; i < toRender.length; i++) {														//SCATTER TREES//
 		
 		if (toRender[i]==0) {
-				
-			if (Random.Range(0.0,1.0)<treeProb) {
 			
-				toRender[i] = treesID;
+			var changeFrequency = 0.003;
+			var changeScale = 1.0;
+			var probChange = Mathf.PerlinNoise((zOff/*19*/)*changeFrequency+(zOff*changeFrequency), 									//base Perlin noise for the ground
+	 							 			   (xOff/*19*/)*changeFrequency+(xOff*changeFrequency)) * changeScale;
+	 							 		
+			
+			var combinedProb = treeProb*probChange;
 				
-				TreeAreola(i, toRender);														//Tree Areola
+			if (Random.Range(0.0,1.0)<combinedProb) {
+			
+				TreeAreola(i, toRender, probChange);											//Tree Areola
+				toRender[i] = treesID;														
 				
 				
 			}
@@ -391,10 +396,28 @@ function ProbabilityScatter() {																//-------ProbabilityScatter------
 	i = 0;
 	
 	
+	for (i=0; i < toRender.length; i++) {														//SCATTER SHROOMS//
+		
+		if (toRender[i]==underTreeID) {
+
+			if (shroomCounter == 0) {
+				if (Random.Range(0.0,1.0)<shroomTreeProb) {
+					shroomCounter=8;
+				}
+			} else if(shroomCounter>0) {
+				if (Random.Range(0.0,1.0)<shroomProb) {
+					toRender[i] = shroomsID;
+					shroomCounter--;													
+				}	
+			}
+		}
+	}
+	
+	
 	for (i=0; i < toRender.length; i++) {														//SCATTER BUSHES//
 		
 		
-		if (toRender[i]==0) {																	//if on empty land
+		if (toRender[i]==emptyID) {																	//if on empty land
 				
 			if (Random.Range(0.0,1.0)<bushProb) {
 			
@@ -426,9 +449,24 @@ function ProbabilityScatter() {																//-------ProbabilityScatter------
 		}
 	}
 	
+	
+	for (i=0; i < toRender.length; i++) {														//SCATTER RABBITS//
+		
+		if (toRender[i]==areolasID) {
+				
+			if (Random.Range(0.0,1.0)<animalProb) {
+			
+				toRender[i] = animalsID;														
+				
+			}
+		}
+	}
+	
+	
+	
 	for (i=0; i < toRender.length; i++) {														//SCATTER PEBBLES//
 		
-		if (toRender[i]==emptyID) {
+		if (toRender[i]==emptyID || toRender[i]==areolasID) {
 				
 			if (Random.Range(0.0,1.0)<pebbleProb) {
 			
@@ -493,6 +531,14 @@ function ScatterRenderer(toRender) {														//----ScatterRenderer----//
 				
 			break;
 			
+			case shroomsID:																	//render SHROOMS//
+			
+				renderedInstances[i] = Instantiate(shroom, temPos, Quaternion.identity);		//instantiation
+				
+				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+			break;
+			
 			
 			case bushesID:																	//render BUSHES//
 				
@@ -527,6 +573,17 @@ function ScatterRenderer(toRender) {														//----ScatterRenderer----//
 				
 			break;
 			
+			case animalsID:																	//render GRASS//
+				
+				
+				//temPos.y+=0.5; 																	//vertical offset
+				
+				renderedInstances[i] = Instantiate(rabbits, temPos, Quaternion.identity); 		//instantiation
+				
+				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+			break;
+			
 			case pebblesID:																	//render PEBBLES//
 				
 				temPos.y+=0.2; 																	//vertical offset
@@ -535,7 +592,14 @@ function ScatterRenderer(toRender) {														//----ScatterRenderer----//
 				
 				renderedInstances[i].rigidbody.Sleep();	
 															
-				//renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
+				
+				
+// 				var randScale = Random.Range(0.8, 1.2);
+// 				renderedInstances[i].transform.localScale.x = randScale;
+// 				renderedInstances[i].transform.localScale.y = randScale;
+// 				renderedInstances[i].transform.localScale.z = randScale;
 				
 			break;
 		}
@@ -547,49 +611,53 @@ function ScatterRenderer(toRender) {														//----ScatterRenderer----//
 
 
 
-function TreeAreola(i, toRender) {															//----TreeAreola----//
+function TreeAreola(i, toRender, probChange) {															//----TreeAreola----//
 
-	toRender[i-1] = toRender[i-1]==bordersID ? bordersID : areolasID;
-	toRender[i+1] = toRender[i+1]==bordersID ? bordersID : areolasID;
-	toRender[i-width] = toRender[i-width]==bordersID ? bordersID : areolasID;
-	toRender[i-width-1] = toRender[i-width-1]==bordersID ? bordersID : areolasID;
-	toRender[i-width+1] = toRender[i-width+1]==bordersID ? bordersID : areolasID;
-	toRender[i+width] = toRender[i+width]==bordersID ? bordersID : areolasID;
-	toRender[i+width-1] = toRender[i+width-1]==bordersID ? bordersID : areolasID;
-	toRender[i+width+1] = toRender[i+width+1]==bordersID ? bordersID : areolasID;
-
-	toRender[i-2] = toRender[i-2]==bordersID ? bordersID : areolasID;
-	toRender[i+2] = toRender[i+2]==bordersID ? bordersID : areolasID;
-
-	if (i-width-2>=0) {
-		toRender[i-width-2] = toRender[i-width-2]==bordersID ? bordersID : areolasID;
+	var areolaSize;
+	
+	if (probChange>0.6) {				
+		areolaSize = 2;
+	} else if (probChange>0.5) {
+		areolaSize = 3;
+	} else if (probChange>0.4) {
+		areolaSize = 4;
+	} else if (probChange>0.3) {
+		areolaSize = 5;
+	} else {
+		areolaSize = 6;
 	}
 	
-	if (i-width+2>=0) {
-		toRender[i-width+2] = toRender[i-width+2]==bordersID ? bordersID : areolasID;
+	/*
+	if (probChange>0.4) {
+		areolaSize = 2;
+	} else if (probChange>0.35) {
+		areolaSize = 3;
+	} else if (probChange>0.3) {
+		areolaSize = 4;
+	} else if (probChange>0.25) {
+		areolaSize = 5;
+	} else {
+		areolaSize = 6;
 	}
-
-	if (i+width-2<toRender.length) {
-		toRender[i+width-2] = toRender[i+width-2]==bordersID ? bordersID : areolasID;
-	}
+	*/
 	
-	if (i+width+2<toRender.length) {
-		toRender[i+width+2] = toRender[i+width+2]==bordersID ? bordersID : areolasID;
-	}
-
-
-	for (var rng = -1; rng<=1; rng++) {
-		if (i-width*2+rng>=0) {
-			toRender[i-width*2+rng] = toRender[i-width*2+rng]==bordersID ? bordersID : areolasID;
+	for (var h = areolaSize*-1; h <= areolaSize; h++) {
+		for(var w = areolaSize*-1; w <= areolaSize; w++) {
+			
+			var index = i+w+(width*h);
+			
+			if (index > 0 && index < toRender.length-1) {									//array bounds check
+				if (Mathf.Abs(w)<=1 && Mathf.Abs(h)<=1) {									//if in shroom area
+					toRender[index]	= toRender[index]==bordersID ? bordersID : underTreeID; //if not the borders, generate shrooms
+				} else {																	//if not in shroom area
+					
+					if (toRender[index] == emptyID) {										//if empty, make areola
+						toRender[index] = areolasID;
+					}
+				}
+			}	
 		}
 	}
-
-	for (rng = -1; rng<=1; rng++) {
-		if (i+width*2+rng<toRender.length) {
-			toRender[i+width*2+rng] = toRender[i+width*2+rng]==bordersID ? bordersID : areolasID;
-		}
-	}	
-
 }
 
 
@@ -830,85 +898,5 @@ function ScatterRabbits(ap, prefab, offsetY, quantityMin, quantityMax, rigidBody
 }
 
 
-
-*/
-
-
-/*Derived from
-Lengyel, Eric. Computing Tangent Space Basis Vectors for an Arbitrary Mesh. Terathon Software 3D Graphics Library, 2001.
-http://www.terathon.com/code/tangent.html
-*/
-
-/* 
-function TangentSolver(theMesh : Mesh)
-    {
-        vertexCount = theMesh.vertexCount;
-        vertices = theMesh.vertices;
-        normals = theMesh.normals;
-        texcoords = theMesh.uv;
-        triangles = theMesh.triangles;
-        triangleCount = triangles.length/3;
-        tangents = new Vector4[vertexCount];
-        tan1 = new Vector3[vertexCount];
-        tan2 = new Vector3[vertexCount];
-        tri = 0;
-        for ( i = 0; i < (triangleCount); i++)
-        {
-            i1 = triangles[tri];
-            i2 = triangles[tri+1];
-            i3 = triangles[tri+2];
- 
-            v1 = vertices[i1];
-            v2 = vertices[i2];
-            v3 = vertices[i3];
- 
-            w1 = texcoords[i1];
-            w2 = texcoords[i2];
-            w3 = texcoords[i3];
- 
-            x1 = v2.x - v1.x;
-            x2 = v3.x - v1.x;
-            y1 = v2.y - v1.y;
-            y2 = v3.y - v1.y;
-            z1 = v2.z - v1.z;
-            z2 = v3.z - v1.z;
- 
-            s1 = w2.x - w1.x;
-            s2 = w3.x - w1.x;
-            t1 = w2.y - w1.y;
-            t2 = w3.y - w1.y;
- 
-            r = 1.0 / (s1 * t2 - s2 * t1);
-            sdir = new Vector3((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
-            tdir = new Vector3((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
- 
-            tan1[i1] += sdir;
-            tan1[i2] += sdir;
-            tan1[i3] += sdir;
- 
-            tan2[i1] += tdir;
-            tan2[i2] += tdir;
-            tan2[i3] += tdir;
- 
-            tri += 3;
-        }
- 
-        for (i = 0; i < (vertexCount); i++)
-        {
-            n = normals[i];
-            t = tan1[i];
- 
-            // Gram-Schmidt orthogonalize
-            Vector3.OrthoNormalize( n, t );
- 
-            tangents[i].x  = t.x;
-            tangents[i].y  = t.y;
-            tangents[i].z  = t.z;
- 
-            // Calculate handedness
-            tangents[i].w = ( Vector3.Dot(Vector3.Cross(n, t), tan2[i]) < 0.0 ) ? -1.0 : 1.0;
-        }       
-    theMesh.tangents = tangents;
-}
 
 */
