@@ -50,6 +50,7 @@ ModelImporter:
     7400016: Standing
     7400018: OnTheFloor
     7400020: Lying
+    7400022: Eating
     9500000: //RootNode
     13700000: GeoSphere001
   materials:
@@ -536,6 +537,64 @@ ModelImporter:
       takeName: Take 001
       firstFrame: 339
       lastFrame: 340
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Bone001
+        weight: 1
+      - path: Bone001/Bone002
+        weight: 1
+      - path: Bone001/Bone002/Bone003
+        weight: 1
+      - path: Bone001/Bone002/Bone003/Bone004
+        weight: 1
+      - path: Bone001/Bone002/Bone003/Bone004/Bone005
+        weight: 1
+      - path: IK Chain001
+        weight: 1
+      - path: IK Chain002
+        weight: 1
+      - path: IK Chain004
+        weight: 1
+      - path: IK Chain005
+        weight: 1
+      - path: IK Chain006
+        weight: 1
+      - path: player_standing
+        weight: 1
+      - path: player_standing/GeoSphere001
+        weight: 1
+      - path: player_standing/GeoSphere003
+        weight: 1
+      - path: player_standing001
+        weight: 1
+      - path: player_standing002
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: Eating
+      takeName: Take 001
+      firstFrame: 150
+      lastFrame: 220
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

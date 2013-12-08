@@ -209,8 +209,7 @@ public class CarryElements : MonoBehaviour {
 
     public void EatBerry(float progress)
     {
-        //TODO: Implement
-        throw new System.NotImplementedException();
+        ThrowBouquet();
     }
 
     private float GetNextAngle()
@@ -232,7 +231,11 @@ public class CarryElements : MonoBehaviour {
 
     public void ThrowBouquet()
     {
-        ClearFlowers();
-        Instantiate(TBouquet, transform.position, new Quaternion());
+        if (carryList.Any())
+        {
+            ClearFlowers();
+            Instantiate(TBouquet, transform.position, new Quaternion());
+        }
+        
     }
 }
