@@ -27,7 +27,7 @@ public class BerryBehaviour : InteractableBehaviour {
 			return CarryObject.Nothing;
 		}*/
 
-        if (!berriesTaken)//&& playerProgress > RealFlowerPick)
+        if (!berriesTaken && playerProgress > 0.25f)
 		{
 			//isActive = !isActive;
             berriesTaken = true;

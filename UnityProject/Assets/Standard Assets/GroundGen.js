@@ -350,8 +350,8 @@ function ProbabilityScatter() {																//-------ProbabilityScatter------
 	
 	var animalProb = 0.005;
 	
-	var shroomProb = 0.001;
-	var shroomTreeProb = 1;
+	var shroomProb = 0.7;
+	var shroomTreeProb = 0.01;
 	var shroomCounter = 0;
 	
 	var index = 0;																				//Fill borders with -1 so nothing can spawn there

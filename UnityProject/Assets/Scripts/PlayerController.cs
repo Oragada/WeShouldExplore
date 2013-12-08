@@ -217,15 +217,17 @@ public class PlayerController : MonoBehaviour {
         InteractableBehaviour closest = FindClosestInteractable();
         if (closest != null)
         {
-            animator.SetBool("picking", true);
+            
 
             CarryObject co = closest.Activate(progress, ToPlayerPos(closest));
             if (co == CarryObject.Flower)
             {
+                animator.SetBool("picking", true);
                 Carry.PickFlower(progress);
             }
             if (co == CarryObject.Berry)
             {
+                animator.SetBool("eating", true);
                 Carry.EatBerry(progress);
             }
             //Carry.PickUpObject(co, progress);
@@ -255,6 +257,10 @@ public class PlayerController : MonoBehaviour {
 		{
 			animator.SetBool("dead", false);
 		}
+        else if (stateInfo.nameHash == Animator.StringToHash("Base.Eating"))
+        {
+            animator.SetBool("eating", false);
+        }
 	}
 	
     private void React()
