@@ -10,7 +10,8 @@ public class ProgressManager : MonoBehaviour {
 	public GameObject sun;
 	public GameObject light;
 	
-	private float progress= 0.0f;	
+	private float progress= 0.0f;
+	private float nextProgress = 0.0f;
 	private float totalSittingTime = 0.0f; //100.0f for testing
 	private uint nearInteractionCounter = 0; // 45 for testing
 	private uint totalTilesTraveled = 0; // 45 for testing
@@ -31,18 +32,18 @@ public class ProgressManager : MonoBehaviour {
 		
 		if (progress>0.70) {
 		
-		light.light.intensity = Mathf.Lerp (0.3f, 0.66f, Mathf.InverseLerp (1.0f, 0.70f, progress));
+		light.light.intensity = Mathf.Lerp (0.1f, 0.66f, Mathf.InverseLerp (1.0f, 0.70f, progress));
 		
 		}
-		
-	
+		if (progress < nextProgress)
+			progress += Mathf.Max ( (nextProgress-progress)*0.01f, 0.000025f);
 	}
 	public void computeProgress()
 	{
 		//Debug.Log ( "progress: "+progress+" totalSittingTime:"+totalSittingTime+" nearInteractionCounter:"+nearInteractionCounter+" totalTilesTraveled:" + totalTilesTraveled+" offset:"+prog_offset);
-		progress = ((Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f)+prog_offset;
-		progress += Mathf.Log10( totalTilesTraveled + 1)*0.05f;
-		progress = Mathf.Max(0.0f, Mathf.Min(1.01f, progress));		
+		nextProgress = ((Mathf.Sqrt( totalSittingTime * (float)(nearInteractionCounter)))/100.0f)+prog_offset;
+		nextProgress += Mathf.Log10( totalTilesTraveled + 1)*0.05f;
+		nextProgress = Mathf.Max(0.0f, Mathf.Min(1.00001f, nextProgress));		
 	}
 	public float getProgress()
 	{
@@ -97,6 +98,17 @@ public class ProgressManager : MonoBehaviour {
 		}		
 		
 		return progress;
+	}
+	public float getProgressOffset ()
+	{
+		return prog_offset;
+	}
+	public void setProgressOffset ( float inVal)
+	{
+		prog_offset = inVal;
+		computeProgress();
+		progress = nextProgress;
+		//progress += inVal;
 	}
 	public float multipointInterpolation(Vector2[] inVal, float inProgress) 
 	{
