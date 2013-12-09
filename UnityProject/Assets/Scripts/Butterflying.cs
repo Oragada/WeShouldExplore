@@ -8,7 +8,7 @@ public class Butterflying : MonoBehaviour {
 	private GameObject butterfly;
 	private GameObject boundaries;
 	//Behaviour
-	public float speed = 0.01f;
+	public float speed = 0.5f;
 	//Sphere variables
 	private float s = 20.0f; // angles inside the sphere
 	private float t = 35.0f;

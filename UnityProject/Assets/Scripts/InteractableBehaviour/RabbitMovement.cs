@@ -26,7 +26,8 @@ public class RabbitMovement : MonoBehaviour
     {
         if (other.tag == "NextTileTriggers")
         {
-            GetComponentsInChildren<MeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
+            gameObject.SetActive(false);
+            //GetComponentsInChildren<MeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
             //TODO: call groundgen and inform that a rabbit have moved out
             //Destroy(this);
         }

@@ -6,7 +6,7 @@ namespace Assets.Scripts.InteractableBehaviour
 {
     public class ShroomBehaviour : InteractableBehaviour {
 
-        public static float RealFlowerPick = 0.3f;
+        //public static float RealFlowerPick = 0.3f;
         //private bool isActive = false;
         public float fade = 0f;
         bool flowerPicked;
@@ -26,13 +26,13 @@ namespace Assets.Scripts.InteractableBehaviour
 
         public override CarryObject Activate(float playerProgress, Vector3 playerPos)
         {
-            if(!flowerPicked & playerProgress <= RealFlowerPick)
+            if(!flowerPicked & playerProgress <= FlowerBehaviour.RealFlowerPick)
             {
                 fade = GetNewFadeDuration(playerProgress);
-                return CarryObject.Flower;
+                return CarryObject.Nothing;
             }
 
-            if (!flowerPicked && playerProgress > RealFlowerPick)
+            if (!flowerPicked && playerProgress > FlowerBehaviour.RealFlowerPick)
             {
                 //isActive = !isActive;
                 flowerPicked = true;
@@ -40,7 +40,7 @@ namespace Assets.Scripts.InteractableBehaviour
 
                 head.gameObject.SetActive(false);
 
-                return CarryObject.Flower;
+                return CarryObject.Nothing;
 
                 //rigidbody.isKinematic = !isActive;
 

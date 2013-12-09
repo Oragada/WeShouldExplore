@@ -6,6 +6,7 @@ namespace Assets.Scripts.InteractableBehaviour
 
     public class ButterflyBehaviour : ReactableBehaviour {
 
+        public bool crossedBorder = false;
         // Use this for initialization
         void Start ()
         {
@@ -13,7 +14,8 @@ namespace Assets.Scripts.InteractableBehaviour
         }
 	
         // Update is called once per frame
-        void Update () {
+        void Update () 
+        {
             if (PlayerInRange)
             {
                 switch (Behaviour)
@@ -49,6 +51,26 @@ namespace Assets.Scripts.InteractableBehaviour
                     case AnimalBehaviour.Flee:
                         break;
                 }
+            }
+
+            Vector3 move = PlayerPos * -1;
+
+            move.Normalize();
+
+            transform.position += (move * CurrentSpeed * Time.deltaTime);
+        }
+
+        void OnTriggerEnter(Collider other)
+        {
+            if (other.tag == "NextTileTriggers")
+            {
+                //MeshRenderer rend = GetComponent<MeshRenderer>();
+                //if(rend != null)rend.renderer.enabled = false;
+                crossedBorder = true;
+                gameObject.SetActive(false);
+                //GetComponentsInChildren<MeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
+                //GetComponentsInChildren<SkinnedMeshRenderer>().ToList().ForEach(e => e.renderer.enabled = false);
+                //Destroy(this);
             }
         }
 
