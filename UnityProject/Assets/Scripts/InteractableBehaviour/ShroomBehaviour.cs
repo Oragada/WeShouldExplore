@@ -36,8 +36,7 @@ namespace Assets.Scripts.InteractableBehaviour
             {
                 //isActive = !isActive;
                 shroomPicked = true;
-
-
+                
                 head.gameObject.SetActive(false);
 
                 return CarryObject.Clear;
