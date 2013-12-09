@@ -6,6 +6,10 @@ public class ProgressManager : MonoBehaviour {
 	public enum Mechanic {Sitting, Travel, Interaction}
 	public enum Values {Alpha, Speed, InertiaDuration, InertiaDistance, GreyPlayerColor, BackgroundColorFactor, CollisionSizePercent}
 	
+	//michail
+	public GameObject sun;
+	public GameObject light;
+	
 	private float progress= 0.0f;	
 	private float totalSittingTime = 0.0f; //100.0f for testing
 	private uint nearInteractionCounter = 0; // 45 for testing
@@ -15,10 +19,22 @@ public class ProgressManager : MonoBehaviour {
 	
 	// Use this for initialization
 	void Start () {
+	
+		sun = GameObject.Find("Sun");
+		light = GameObject.Find("DirectionalLight");
 	}
 	
 	// Update is called once per frame
 	void Update () {
+	
+		sun.transform.eulerAngles = new Vector3(0, 0, -progress*180);
+		
+		if (progress>0.70) {
+		
+		light.light.intensity = Mathf.Lerp (0.1f, 0.66f, Mathf.InverseLerp (1.0f, 0.70f, progress));
+		
+		}
+		
 	
 	}
 	public void computeProgress()

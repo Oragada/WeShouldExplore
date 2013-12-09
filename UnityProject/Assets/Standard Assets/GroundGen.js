@@ -31,6 +31,7 @@ var shroom : GameObject;
 var bush : GameObject;
 var pebble : GameObject;
 var rabbits : GameObject;
+var butterflies : GameObject;
 var grass : GameObject;
 var grass1 : GameObject;
 var grass2 : GameObject;
@@ -127,9 +128,6 @@ function Update() {																			//-----Update-----//
 		scatterStack.Add(currentScat);														//The current scat gets always saved to the stacked
 																														
 	}
-	
-	
-
 }
 
 
@@ -450,7 +448,7 @@ function ProbabilityScatter() {																//-------ProbabilityScatter------
 	}
 	
 	
-	for (i=0; i < toRender.length; i++) {														//SCATTER RABBITS//
+	for (i=0; i < toRender.length; i++) {														//SCATTER ANIMALS//
 		
 		if (toRender[i]==areolasID) {
 				
@@ -567,18 +565,34 @@ function ScatterRenderer(toRender) {														//----ScatterRenderer----//
 				
 				temPos.y+=0.5; 																	//vertical offset
 				
-				renderedInstances[i] = Instantiate(grass1, temPos, Quaternion.identity); 		//instantiation
+				if (Random.Range(0.0,1.0)<0.3) {
 				
+					renderedInstances[i] = Instantiate(grass, temPos, Quaternion.identity);						
+				
+				} else if (Random.Range(0.0,1.0)<0.6) {
+					renderedInstances[i] = Instantiate(grass1, temPos, Quaternion.identity);
+				} else {
+					renderedInstances[i] = Instantiate(grass2, temPos, Quaternion.identity);
+				}
+				
+
 				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
 				
 			break;
 			
-			case animalsID:																	//render GRASS//
+			case animalsID:																	//render ANIMALS//
 				
 				
-				//temPos.y+=0.5; 																	//vertical offset
+				//temPos.y+=0.5; 
 				
-				renderedInstances[i] = Instantiate(rabbits, temPos, Quaternion.identity); 		//instantiation
+				if (Random.Range(0.0,1.0)<0.3) {
+				
+					renderedInstances[i] = Instantiate(rabbits, temPos, Quaternion.identity);
+				
+				} else {
+					renderedInstances[i] = Instantiate(butterflies, temPos, Quaternion.identity);
+				}
+				 		//instantiation
 				
 				renderedInstances[i].transform.eulerAngles.y = Random.Range(0, 360);			//random rotation
 				
