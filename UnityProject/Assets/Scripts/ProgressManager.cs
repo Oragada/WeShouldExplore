@@ -27,11 +27,11 @@ public class ProgressManager : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 	
-		sun.transform.eulerAngles = new Vector3(0, 0, -progress*180);
+		sun.transform.eulerAngles = new Vector3(0, 0, -progress*170);
 		
 		if (progress>0.70) {
 		
-		light.light.intensity = Mathf.Lerp (0.1f, 0.66f, Mathf.InverseLerp (1.0f, 0.70f, progress));
+		light.light.intensity = Mathf.Lerp (0.3f, 0.66f, Mathf.InverseLerp (1.0f, 0.70f, progress));
 		
 		}
 		
@@ -88,7 +88,7 @@ public class ProgressManager : MonoBehaviour {
 			case Values.GreyPlayerColor:			
 		        return Mathf.Min(1.0f, -0.4f*progress+0.5f);
 			case Values.BackgroundColorFactor:
-				return linearInterpolationBetween(1.0f,0.9f,progress);
+				return linearInterpolationBetween(1.08f,0.7f,progress);
 			case Values.CollisionSizePercent: // 0.25 = zero, 0.5 = one
 				return linearInterpolationBetween(0.20f,0.5f,progress);
 		    default:
