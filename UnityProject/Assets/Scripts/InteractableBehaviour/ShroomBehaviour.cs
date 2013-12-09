@@ -9,7 +9,7 @@ namespace Assets.Scripts.InteractableBehaviour
         //public static float RealFlowerPick = 0.3f;
         //private bool isActive = false;
         public float fade = 0f;
-        bool flowerPicked;
+        bool shroomPicked;
         private Component head;
 
         readonly Color[] colors = new []{new Color(1,0,0), new Color(0,0,1) };
@@ -26,21 +26,21 @@ namespace Assets.Scripts.InteractableBehaviour
 
         public override CarryObject Activate(float playerProgress, Vector3 playerPos)
         {
-            if(!flowerPicked & playerProgress <= FlowerBehaviour.RealFlowerPick)
+            if(!shroomPicked & playerProgress <= FlowerBehaviour.RealFlowerPick)
             {
                 fade = GetNewFadeDuration(playerProgress);
-                return CarryObject.Nothing;
+                return CarryObject.Clear;
             }
 
-            if (!flowerPicked && playerProgress > FlowerBehaviour.RealFlowerPick)
+            if (!shroomPicked && playerProgress > FlowerBehaviour.RealFlowerPick)
             {
                 //isActive = !isActive;
-                flowerPicked = true;
+                shroomPicked = true;
 
 
                 head.gameObject.SetActive(false);
 
-                return CarryObject.Nothing;
+                return CarryObject.Clear;
 
                 //rigidbody.isKinematic = !isActive;
 
@@ -67,7 +67,7 @@ namespace Assets.Scripts.InteractableBehaviour
         public override string customInteractiveText()
         {
             //Press E
-            return "to pick the Flower.";
+            return "to east the Mushroom";
         }
 
         // Use this for initialization

@@ -24,7 +24,8 @@ public class Butterflying : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void Update () 
+    {
 		if(  Vector3.Distance(butterfly.transform.position, nextPos) < 0.05f)
 		{
 			//compute next point on the sphere to fly to
